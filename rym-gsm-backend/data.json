@@ -1,0 +1,146 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin User",
+      "email": "admin@rymgsm.com",
+      "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+      "phone": "+1234567890",
+      "address": "123 Admin St, City, State",
+      "role": "admin",
+      "created_at": "2025-09-20T14:54:29.388Z"
+    },
+    {
+      "id": 2,
+      "name": "ayoubbbbbb",
+      "email": "ayoub@gmail.com",
+      "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+      "phone": "254896233333333",
+      "address": "",
+      "role": "user",
+      "created_at": "2025-09-20T14:54:29.389Z"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "iPhone 15 Pro",
+      "brand": "Apple",
+      "price": 999.99,
+      "stock": 25,
+      "category": "phone",
+      "images": [
+        "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500",
+        "https://images.unsplash.com/photo-1511707171631-9ed2a79be0f3?w=500"
+      ],
+      "specs": {
+        "ram": "8GB",
+        "storage": "128GB",
+        "camera": "48MP Main, 12MP Ultra Wide, 12MP Telephoto",
+        "battery": "3274 mAh",
+        "display": "6.1-inch Super Retina XDR",
+        "processor": "A17 Pro chip"
+      },
+      "description": "The latest iPhone with titanium design and advanced camera system."
+    },
+    {
+      "id": 2,
+      "name": "Samsung Galaxy S24 Ultra",
+      "brand": "Samsung",
+      "price": 1199.99,
+      "stock": 20,
+      "category": "phone",
+      "images": [
+        "https://images.unsplash.com/photo-1511707171631-9ed2a79be0f3?w=500",
+        "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500"
+      ],
+      "specs": {
+        "ram": "12GB",
+        "storage": "256GB",
+        "camera": "200MP Main, 12MP Ultra Wide, 10MP Telephoto, 10MP Periscope",
+        "battery": "5000 mAh",
+        "display": "6.8-inch Dynamic AMOLED 2X",
+        "processor": "Snapdragon 8 Gen 3"
+      },
+      "description": "Premium Android flagship with S Pen and advanced AI features."
+    },
+    {
+      "id": 3,
+      "name": "Google Pixel 8 Pro",
+      "brand": "Google",
+      "price": 899.99,
+      "stock": 15,
+      "category": "phone",
+      "images": [
+        "https://images.unsplash.com/photo-1511707171631-9ed2a79be0f3?w=500",
+        "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500"
+      ],
+      "specs": {
+        "ram": "12GB",
+        "storage": "128GB",
+        "camera": "50MP Main, 48MP Ultra Wide, 48MP Telephoto",
+        "battery": "5050 mAh",
+        "display": "6.7-inch LTPO OLED",
+        "processor": "Google Tensor G3"
+      },
+      "description": "AI-powered smartphone with exceptional camera capabilities."
+    },
+    {
+      "id": 4,
+      "name": "AirPods Pro (2nd Gen)",
+      "brand": "Apple",
+      "price": 249.99,
+      "stock": 50,
+      "category": "accessory",
+      "images": [
+        "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=500"
+      ],
+      "specs": {
+        "battery": "Up to 6 hours listening time",
+        "connectivity": "Bluetooth 5.3",
+        "features": "Active Noise Cancellation, Spatial Audio, Adaptive Transparency",
+        "case": "MagSafe Charging Case"
+      },
+      "description": "Premium wireless earbuds with active noise cancellation."
+    }
+  ],
+  "carts": {},
+  "orders": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "products": [
+        {
+          "product_id": 1,
+          "name": "iPhone 15 Pro",
+          "price": 999.99,
+          "quantity": 1
+        },
+        {
+          "product_id": 2,
+          "name": "Samsung Galaxy S24 Ultra",
+          "price": 1199.99,
+          "quantity": 1
+        }
+      ],
+      "total": 2199.98,
+      "status": "pending",
+      "created_at": "2024-01-15T10:30:00.000Z"
+    },
+    {
+      "id": 2,
+      "user_id": 2,
+      "products": [
+        {
+          "product_id": 3,
+          "name": "Google Pixel 8 Pro",
+          "price": 899.99,
+          "quantity": 1
+        }
+      ],
+      "total": 899.99,
+      "status": "shipped",
+      "created_at": "2024-01-10T14:20:00.000Z"
+    }
+  ]
+}
