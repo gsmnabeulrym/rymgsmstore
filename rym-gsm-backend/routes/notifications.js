@@ -85,7 +85,7 @@ router.get('/preferences', authenticateToken, async (req, res) => {
     if (preferences.length === 0) {
       // Create default preferences if none exist
       await query(
-        'INSERT INTO notification_preferences (user_id, order_updates, stock_alerts, price_drops, new_products, promotions) VALUES (?, 1, 1, 1, 1, 1)',
+        'INSERT INTO notification_preferences (user_id, order_updates, stock_alerts, price_drops, new_products, promotions) VALUES (?, true, true, true, true, true)',
         [userId]
       );
 
@@ -133,12 +133,12 @@ router.put('/preferences', authenticateToken, async (req, res) => {
     if (existing.length > 0) {
       await query(
         'UPDATE notification_preferences SET order_updates = ?, stock_alerts = ?, price_drops = ?, new_products = ?, promotions = ? WHERE user_id = ?',
-        [order_updates ? 1 : 0, stock_alerts ? 1 : 0, price_drops ? 1 : 0, new_products ? 1 : 0, promotions ? 1 : 0, userId]
+        [!!order_updates, !!stock_alerts, !!price_drops, !!new_products, !!promotions, userId]
       );
     } else {
       await query(
         'INSERT INTO notification_preferences (user_id, order_updates, stock_alerts, price_drops, new_products, promotions) VALUES (?, ?, ?, ?, ?, ?)',
-        [userId, order_updates ? 1 : 0, stock_alerts ? 1 : 0, price_drops ? 1 : 0, new_products ? 1 : 0, promotions ? 1 : 0]
+        [userId, !!order_updates, !!stock_alerts, !!price_drops, !!new_products, !!promotions]
       );
     }
 
@@ -163,7 +163,7 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     const result = await query(
-      'UPDATE notifications SET read_status = 1 WHERE id = ? AND user_id = ?',
+      'UPDATE notifications SET read_status = true WHERE id = ? AND user_id = ?',
       [id, userId]
     );
 
@@ -192,7 +192,7 @@ router.put('/mark-all-read', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     await query(
-      'UPDATE notifications SET read_status = 1 WHERE user_id = ? AND read_status = 0',
+      'UPDATE notifications SET read_status = true WHERE user_id = ? AND read_status = false',
       [userId]
     );
 

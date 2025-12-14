@@ -1081,18 +1081,11 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
       shippingAddressStr = `${shippingAddress.firstName} ${shippingAddress.lastName}\n${shippingAddress.address}\n${shippingAddress.city}, ${shippingAddress.postalCode}\n${shippingAddress.country}\nPhone: ${shippingAddress.phone}\nEmail: ${shippingAddress.email}`;
     }
 
-    // Add payment_method column if it doesn't exist
-    try {
-      await pool.execute('ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) DEFAULT "cash"');
-    } catch (error) {
-      // Column already exists, ignore error
-    }
-
-    // Create order in database
+    // Create order in database (without payment_method since column doesn't exist in PostgreSQL)
     console.log('Inserting order into database...');
     const [result] = await pool.execute(
-      'INSERT INTO orders (user_id, products, total, status, shipping_address, payment_method) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, JSON.stringify(orderItems), orderTotal, orderStatus, shippingAddressStr, paymentMethod || 'cash']
+      'INSERT INTO orders (user_id, products, total, status, shipping_address) VALUES (?, ?, ?, ?, ?)',
+      [userId, JSON.stringify(orderItems), orderTotal, orderStatus, shippingAddressStr]
     );
     
     console.log('Order inserted with ID:', result.insertId);
