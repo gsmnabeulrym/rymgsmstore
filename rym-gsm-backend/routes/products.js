@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const notificationService = require('../services/notificationService');
 
@@ -124,7 +124,7 @@ router.get('/', async (req, res) => {
     query += ' LIMIT ? OFFSET ?';
     queryParams.push(parseInt(limit), offset);
 
-    const [products] = await pool.execute(query, queryParams);
+    const products = await query(query, queryParams);
 
     // Get total count for pagination
     let countQuery = 'SELECT COUNT(*) as total FROM products WHERE 1=1';
@@ -159,7 +159,7 @@ router.get('/', async (req, res) => {
       countParams.push(storage);
     }
 
-    const [countResult] = await pool.execute(countQuery, countParams);
+    const countResult = await query(countQuery, countParams);
     const total = countResult[0].total;
 
     // Parse JSON fields
@@ -190,7 +190,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [products] = await pool.execute(
+    const products = await query(
       'SELECT * FROM products WHERE id = ?',
       [id]
     );
@@ -214,7 +214,7 @@ router.get('/:id', async (req, res) => {
 // Get unique brands for filter
 router.get('/brands/list', async (req, res) => {
   try {
-    const [brands] = await pool.execute(
+    const brands = await query(
       'SELECT DISTINCT brand FROM products ORDER BY brand'
     );
 
@@ -252,7 +252,7 @@ router.post('/', authenticateToken, requireAdmin, [
       ? parseInt(req.body.stock) 
       : 999;
 
-    const [result] = await pool.execute(
+    const result = await query(
       'INSERT INTO products (name, brand, price, stock, category, images, specs, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [name, brand, price, stock, category, JSON.stringify(images), JSON.stringify(specs), description || null]
     );
@@ -310,7 +310,7 @@ router.put('/:id', authenticateToken, requireAdmin, [
     const { name, brand, price, stock, category, images, specs, description } = req.body;
 
     // Check if product exists and get current values
-    const [existingProducts] = await pool.execute(
+    const existingProducts = await query(
       'SELECT id, name, price, stock FROM products WHERE id = ?',
       [id]
     );
@@ -364,7 +364,7 @@ router.put('/:id', authenticateToken, requireAdmin, [
 
     updateValues.push(id);
 
-    await pool.execute(
+    await query(
       `UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`,
       updateValues
     );
@@ -405,7 +405,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [result] = await pool.execute(
+    const result = await query(
       'DELETE FROM products WHERE id = ?',
       [id]
     );
