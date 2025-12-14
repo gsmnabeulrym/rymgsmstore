@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 
 class NotificationService {
   
@@ -9,7 +9,7 @@ class NotificationService {
       const users = Array.isArray(userIds) ? userIds : [userIds];
       
       for (const userId of users) {
-        await pool.execute(
+        await query(
           'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
           [userId, type, title, message, JSON.stringify(data)]
         );
@@ -26,7 +26,7 @@ class NotificationService {
   // Get all users who want specific notification type
   async getUsersForNotificationType(notificationType) {
     try {
-      const [users] = await pool.execute(`
+      const users = await query(`
         SELECT u.id, u.name, u.email 
         FROM users u 
         LEFT JOIN notification_preferences np ON u.id = np.user_id 
@@ -41,7 +41,7 @@ class NotificationService {
         )
       `, [notificationType, notificationType, notificationType, notificationType, notificationType, notificationType]);
       
-      return users;
+      return users || [];
     } catch (error) {
       console.error('❌ Error getting users for notification type:', error);
       return [];
@@ -150,7 +150,7 @@ class NotificationService {
 
       if (modificationType === 'price_drop') {
         // Notify users who have this product in wishlist
-        const [wishlistUsers] = await pool.execute(`
+        const wishlistUsers = await query(`
           SELECT DISTINCT u.id, u.name 
           FROM users u 
           JOIN wishlist w ON u.id = w.user_id 
@@ -159,13 +159,13 @@ class NotificationService {
           AND (np.price_drops = 1 OR np.price_drops IS NULL)
         `, [productId]);
         
-        users = wishlistUsers;
+        users = wishlistUsers || [];
         notificationType = 'price_drop';
         title = '💰 Price Drop Alert!';
         message = `Great news! ${productName} price has dropped from ${oldValue} DT to ${newValue} DT. Don't miss out!`;
       } else if (modificationType === 'back_in_stock') {
         // Notify users who have this product in wishlist
-        const [wishlistUsers] = await pool.execute(`
+        const wishlistUsers = await query(`
           SELECT DISTINCT u.id, u.name 
           FROM users u 
           JOIN wishlist w ON u.id = w.user_id 
@@ -174,7 +174,7 @@ class NotificationService {
           AND (np.stock_alerts = 1 OR np.stock_alerts IS NULL)
         `, [productId]);
         
-        users = wishlistUsers;
+        users = wishlistUsers || [];
         notificationType = 'stock_alert';
         title = '📦 Back in Stock!';
         message = `${productName} is now back in stock! Get it before it runs out again.`;
@@ -198,8 +198,8 @@ class NotificationService {
   // Notify all users about system updates or important announcements
   async notifySystemUpdate(title, message, isUrgent = false) {
     try {
-      const [allUsers] = await pool.execute('SELECT id FROM users WHERE role = "user"');
-      const userIds = allUsers.map(user => user.id);
+      const allUsers = await query("SELECT id FROM users WHERE role = 'user'");
+      const userIds = (allUsers || []).map(user => user.id);
       
       if (userIds.length === 0) {
         console.log('ℹ️ No users to notify for system update');
@@ -223,12 +223,13 @@ class NotificationService {
   // Clean up old notifications (older than 30 days)
   async cleanupOldNotifications() {
     try {
-      const [result] = await pool.execute(
-        'DELETE FROM notifications WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)'
+      const result = await query(
+        "DELETE FROM notifications WHERE created_at < NOW() - INTERVAL '30 days'"
       );
       
-      if (result.affectedRows > 0) {
-        console.log(`🧹 Cleaned up ${result.affectedRows} old notifications`);
+      const rowsAffected = result.rowCount || result.affectedRows || 0;
+      if (rowsAffected > 0) {
+        console.log(`🧹 Cleaned up ${rowsAffected} old notifications`);
       }
     } catch (error) {
       console.error('❌ Error cleaning up notifications:', error);
@@ -238,9 +239,9 @@ class NotificationService {
   // Get notification statistics
   async getNotificationStats() {
     try {
-      const [totalStats] = await pool.execute('SELECT COUNT(*) as total FROM notifications');
-      const [unreadStats] = await pool.execute('SELECT COUNT(*) as unread FROM notifications WHERE read_status = 0');
-      const [typeStats] = await pool.execute(`
+      const totalStats = await query('SELECT COUNT(*) as total FROM notifications');
+      const unreadStats = await query('SELECT COUNT(*) as unread FROM notifications WHERE read_status = 0');
+      const typeStats = await query(`
         SELECT type, COUNT(*) as count 
         FROM notifications 
         GROUP BY type 
@@ -248,9 +249,9 @@ class NotificationService {
       `);
       
       return {
-        total: totalStats[0].total,
-        unread: unreadStats[0].unread,
-        byType: typeStats
+        total: totalStats[0]?.total || 0,
+        unread: unreadStats[0]?.unread || 0,
+        byType: typeStats || []
       };
     } catch (error) {
       console.error('❌ Error getting notification stats:', error);
