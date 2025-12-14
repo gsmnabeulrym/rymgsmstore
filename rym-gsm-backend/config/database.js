@@ -19,7 +19,23 @@ if (DATABASE_URL) {
   });
 
   pgPool.connect()
-    .then(() => console.log('✅ Connected to PostgreSQL database (Render)'))
+    .then(async () => {
+      console.log('✅ Connected to PostgreSQL database (Render)');
+      
+      // Fix orders_status_check constraint to include 'confirmed'
+      try {
+        await pgPool.query(`
+          ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+        `);
+        await pgPool.query(`
+          ALTER TABLE orders ADD CONSTRAINT orders_status_check 
+          CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled'));
+        `);
+        console.log('✅ Fixed orders_status_check constraint');
+      } catch (err) {
+        console.log('ℹ️ orders_status_check constraint already correct or table not ready:', err.message);
+      }
+    })
     .catch(err => console.error('❌ PostgreSQL connection failed:', err.message));
 
   // Create a wrapper that provides MySQL-compatible interface
