@@ -1584,6 +1584,16 @@ app.get('/api/users/:id', async (req, res) => {
   }
 });
 
+// Serve static files from the React frontend build FIRST
+const frontendBuildPath = path.join(__dirname, '..', 'rym-gsm-frontend', 'dist');
+console.log('🔍 Checking for frontend build at:', frontendBuildPath);
+console.log('📂 Frontend build exists:', fs.existsSync(frontendBuildPath));
+
+if (fs.existsSync(frontendBuildPath)) {
+  app.use(express.static(frontendBuildPath));
+  console.log('📁 Serving frontend from:', frontendBuildPath);
+}
+
 // Debug middleware to log ALL requests
 app.use((req, res, next) => {
   console.log(`📝 ${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -1606,16 +1616,12 @@ app.use('/api', productsRoutes); // Products last because it has catch-all /:id 
 
 console.log('🔗 Notification routes mounted at: /api/notifications');
 
-// Serve static files from the React frontend build
-const frontendBuildPath = path.join(__dirname, '..', 'rym-gsm-frontend', 'dist');
+// Handle React routing - serve index.html for all non-API routes
 if (fs.existsSync(frontendBuildPath)) {
-  app.use(express.static(frontendBuildPath));
-  
-  // Handle React routing - serve index.html for all non-API routes
   app.get('*', (req, res) => {
+    console.log('🏠 Serving index.html for:', req.path);
     res.sendFile(path.join(frontendBuildPath, 'index.html'));
   });
-  console.log('📁 Serving frontend from:', frontendBuildPath);
 } else {
   // 404 handler for API-only mode
   app.use('*', (req, res) => {
