@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const notificationService = require('../services/notificationService');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 
 const router = express.Router();
 
@@ -19,7 +19,7 @@ const authenticateAdmin = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'rym-gsm-secret-key-2024');
     
     // Get user details from database
-    const [users] = await pool.execute('SELECT id, role FROM users WHERE id = ?', [decoded.userId]);
+    const users = await query('SELECT id, role FROM users WHERE id = ?', [decoded.userId]);
     if (users.length === 0 || users[0].role !== 'admin') {
       return res.status(403).json({ message: 'Admin access required' });
     }
@@ -37,10 +37,10 @@ router.get('/all', authenticateAdmin, async (req, res) => {
     const { search, type, page = 1, limit = 50 } = req.query;
     
     // Get the first user ID to use as "All Users" identifier
-    const [users] = await pool.execute('SELECT id FROM users ORDER BY id LIMIT 1');
-    const allUsersId = users.length > 0 ? users[0].id : null;
+    const usersForId = await query('SELECT id FROM users ORDER BY id LIMIT 1');
+    const allUsersId = usersForId.length > 0 ? usersForId[0].id : null;
     
-    let query = `
+    let sqlQuery = `
       SELECT 
         n.*,
         CASE 
@@ -58,22 +58,22 @@ router.get('/all', authenticateAdmin, async (req, res) => {
     const queryParams = [allUsersId, allUsersId]; // For the two CASE statements
     
     if (search) {
-      query += ' AND (n.title LIKE ? OR n.message LIKE ?)';
+      sqlQuery += ' AND (n.title LIKE ? OR n.message LIKE ?)';
       queryParams.push(`%${search}%`, `%${search}%`);
     }
     
     if (type) {
-      query += ' AND n.type = ?';
+      sqlQuery += ' AND n.type = ?';
       queryParams.push(type);
     }
     
-    query += ' ORDER BY n.created_at DESC';
+    sqlQuery += ' ORDER BY n.created_at DESC';
     
     const offset = (page - 1) * limit;
-    query += ' LIMIT ? OFFSET ?';
+    sqlQuery += ' LIMIT ? OFFSET ?';
     queryParams.push(parseInt(limit), offset);
     
-    const [notifications] = await pool.execute(query, queryParams);
+    const notifications = await query(sqlQuery, queryParams);
     
     // Get total count
     let countQuery = 'SELECT COUNT(*) as total FROM notifications WHERE 1=1';
@@ -89,7 +89,7 @@ router.get('/all', authenticateAdmin, async (req, res) => {
       countParams.push(type);
     }
     
-    const [countResult] = await pool.execute(countQuery, countParams);
+    const countResult = await query(countQuery, countParams);
     
     res.json({
       success: true,
@@ -115,17 +115,17 @@ router.get('/products', authenticateAdmin, async (req, res) => {
   try {
     const { search } = req.query;
     
-    let query = 'SELECT id, name, brand, price, category, images FROM products WHERE 1=1';
+    let sqlQuery = 'SELECT id, name, brand, price, category, images FROM products WHERE 1=1';
     const params = [];
     
     if (search) {
-      query += ' AND (name LIKE ? OR brand LIKE ? OR category LIKE ?)';
+      sqlQuery += ' AND (name LIKE ? OR brand LIKE ? OR category LIKE ?)';
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
     
-    query += ' ORDER BY name ASC LIMIT 50';
+    sqlQuery += ' ORDER BY name ASC LIMIT 50';
     
-    const [products] = await pool.execute(query, params);
+    const products = await query(sqlQuery, params);
     
     const formattedProducts = products.map(product => ({
       id: product.id,
@@ -152,16 +152,16 @@ router.get('/products', authenticateAdmin, async (req, res) => {
 // GET /api/admin/notifications/stats - Get notification statistics
 router.get('/stats', authenticateAdmin, async (req, res) => {
   try {
-    const [totalResult] = await pool.execute('SELECT COUNT(*) as total FROM notifications');
-    const [promotionsResult] = await pool.execute('SELECT COUNT(*) as promotions FROM notifications WHERE type = "promotion"');
-    const [usersResult] = await pool.execute('SELECT COUNT(DISTINCT user_id) as users FROM notifications');
-    const [monthResult] = await pool.execute(`
+    const totalResult = await query('SELECT COUNT(*) as total FROM notifications');
+    const promotionsResult = await query("SELECT COUNT(*) as promotions FROM notifications WHERE type = 'promotion'");
+    const usersResult = await query('SELECT COUNT(DISTINCT user_id) as users FROM notifications');
+    const monthResult = await query(`
       SELECT COUNT(*) as thisMonth 
       FROM notifications 
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+      WHERE created_at >= NOW() - INTERVAL '1 MONTH'
     `);
     
-    const [typeStats] = await pool.execute(`
+    const typeStats = await query(`
       SELECT type, COUNT(*) as count 
       FROM notifications 
       GROUP BY type 

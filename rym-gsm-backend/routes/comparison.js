@@ -1,18 +1,18 @@
 const express = require('express');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 const router = express.Router();
 
 // Helper function to safely execute queries
-async function safeQuery(query, params = []) {
+async function safeQuery(sqlQuery, params = []) {
   try {
-    console.log('🔍 Executing query:', query);
+    console.log('🔍 Executing query:', sqlQuery);
     console.log('🔍 With params:', params);
-    const [rows] = await pool.execute(query, params);
+    const rows = await query(sqlQuery, params);
     console.log('✅ Query result:', rows);
     return rows;
   } catch (error) {
     console.log(`❌ Comparison query failed: ${error.message}`);
-    console.log('❌ Query was:', query);
+    console.log('❌ Query was:', sqlQuery);
     console.log('❌ Params were:', params);
     return [];
   }
@@ -67,14 +67,14 @@ router.get('/products/:ids', async (req, res) => {
       let images = [];
       
       try {
-        specs = product.specs ? JSON.parse(product.specs) : {};
+        specs = typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {});
       } catch (error) {
         console.log(`Failed to parse specs for product ${product.id}`);
         specs = {};
       }
       
       try {
-        images = product.images ? JSON.parse(product.images) : [];
+        images = typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []);
       } catch (error) {
         console.log(`Failed to parse images for product ${product.id}`);
         images = [];
@@ -168,7 +168,7 @@ router.get('/similar/:id', async (req, res) => {
     const processedSimilarProducts = similarProducts.map(product => {
       let images = [];
       try {
-        images = product.images ? JSON.parse(product.images) : [];
+        images = typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []);
       } catch (error) {
         images = [];
       }
@@ -242,7 +242,7 @@ router.get('/features', async (req, res) => {
     
     products.forEach(product => {
       try {
-        const specs = JSON.parse(product.specs);
+        const specs = typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {});
         Object.keys(specs).forEach(key => allFeatures.add(key));
       } catch (error) {
         // Skip invalid JSON

@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 const router = express.Router();
 
 // Middleware to authenticate user
@@ -16,7 +16,7 @@ const authenticateToken = async (req, res, next) => {
     const decoded = jwt.verify(token, 'rym-gsm-secret-key-2024');
     
     // Get user details from database to include role
-    const [users] = await pool.execute('SELECT id, role FROM users WHERE id = ?', [decoded.userId]);
+    const users = await query('SELECT id, role FROM users WHERE id = ?', [decoded.userId]);
     if (users.length === 0) {
       return res.status(403).json({ message: 'User not found' });
     }
@@ -31,8 +31,8 @@ const authenticateToken = async (req, res, next) => {
 // Helper function to calculate average rating for a product
 const calculateProductRating = async (productId) => {
   try {
-    const [rows] = await pool.execute(
-      'SELECT AVG(rating) as average, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = "approved"',
+    const rows = await query(
+      "SELECT AVG(rating) as average, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = 'approved'",
       [productId]
     );
     
@@ -50,8 +50,8 @@ const calculateProductRating = async (productId) => {
 // Helper function to get rating distribution
 const getRatingDistribution = async (productId) => {
   try {
-    const [rows] = await pool.execute(
-      'SELECT rating, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = "approved" GROUP BY rating',
+    const rows = await query(
+      "SELECT rating, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = 'approved' GROUP BY rating",
       [productId]
     );
     
@@ -91,7 +91,7 @@ router.get('/products/:productId/reviews', async (req, res) => {
     
     // Get reviews with user names
     const offset = (page - 1) * limit;
-    const [reviews] = await pool.execute(`
+    const reviews = await query(`
       SELECT r.*, u.name as user_name 
       FROM reviews r 
       JOIN users u ON r.user_id = u.id 
@@ -101,8 +101,8 @@ router.get('/products/:productId/reviews', async (req, res) => {
     `, [productId, limit, offset]);
     
     // Get total count for pagination
-    const [countResult] = await pool.execute(
-      'SELECT COUNT(*) as total FROM reviews WHERE product_id = ? AND status = "approved"',
+    const countResult = await query(
+      "SELECT COUNT(*) as total FROM reviews WHERE product_id = ? AND status = 'approved'",
       [productId]
     );
     const totalReviews = countResult[0].total;
@@ -149,7 +149,7 @@ router.post('/products/:productId/reviews', authenticateToken, async (req, res) 
     }
     
     // Check if user already reviewed this product
-    const [existingReviews] = await pool.execute(
+    const existingReviews = await query(
       'SELECT id FROM reviews WHERE product_id = ? AND user_id = ?',
       [productId, userId]
     );
@@ -161,13 +161,13 @@ router.post('/products/:productId/reviews', authenticateToken, async (req, res) 
     }
     
     // Insert new review into database
-    const [result] = await pool.execute(
+    const result = await query(
       'INSERT INTO reviews (product_id, user_id, rating, comment, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
       [productId, userId, parseInt(rating), comment.trim(), 'approved']
     );
     
     // Get the created review with user name
-    const [newReview] = await pool.execute(`
+    const newReview = await query(`
       SELECT r.*, u.name as user_name 
       FROM reviews r 
       JOIN users u ON r.user_id = u.id 
@@ -206,7 +206,7 @@ router.get('/reviews', authenticateToken, async (req, res) => {
     }
     
     // Get reviews with user names and product names
-    const [reviews] = await pool.execute(`
+    const reviews = await query(`
       SELECT r.*, u.name as user_name, p.name as product_name 
       FROM reviews r 
       JOIN users u ON r.user_id = u.id 
@@ -217,13 +217,13 @@ router.get('/reviews', authenticateToken, async (req, res) => {
     `, [...params, limit, offset]);
     
     // Get total count
-    const [countResult] = await pool.execute(`
+    const countResult = await query(`
       SELECT COUNT(*) as total FROM reviews r ${whereClause}
     `, params);
     const totalReviews = countResult[0].total;
     
     // Get stats
-    const [statsResult] = await pool.execute(`
+    const statsResult = await query(`
       SELECT 
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
@@ -264,7 +264,7 @@ router.put('/reviews/:reviewId', authenticateToken, async (req, res) => {
     }
     
     // Update review status
-    const [result] = await pool.execute(
+    const result = await query(
       'UPDATE reviews SET status = ?, updated_at = NOW() WHERE id = ?',
       [status, reviewId]
     );
@@ -274,7 +274,7 @@ router.put('/reviews/:reviewId', authenticateToken, async (req, res) => {
     }
     
     // Get updated review
-    const [updatedReview] = await pool.execute(`
+    const updatedReview = await query(`
       SELECT r.*, u.name as user_name 
       FROM reviews r 
       JOIN users u ON r.user_id = u.id 
@@ -302,7 +302,7 @@ router.delete('/reviews/:reviewId', authenticateToken, async (req, res) => {
     const reviewId = parseInt(req.params.reviewId);
     
     // Get review before deleting
-    const [reviewToDelete] = await pool.execute(`
+    const reviewToDelete = await query(`
       SELECT r.*, u.name as user_name 
       FROM reviews r 
       JOIN users u ON r.user_id = u.id 
@@ -314,7 +314,7 @@ router.delete('/reviews/:reviewId', authenticateToken, async (req, res) => {
     }
     
     // Delete review
-    await pool.execute('DELETE FROM reviews WHERE id = ?', [reviewId]);
+    await query('DELETE FROM reviews WHERE id = ?', [reviewId]);
     
     res.json({
       message: 'Review deleted successfully',

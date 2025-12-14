@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 const router = express.Router();
 
 // Simple test route without authentication
@@ -22,7 +22,7 @@ const authenticateToken = async (req, res, next) => {
     const decoded = jwt.verify(token, 'rym-gsm-secret-key-2024');
     
     // Get user details from database to include role
-    const [users] = await pool.execute('SELECT id, role FROM users WHERE id = ?', [decoded.userId]);
+    const users = await query('SELECT id, role FROM users WHERE id = ?', [decoded.userId]);
     if (users.length === 0) {
       return res.status(403).json({ message: 'User not found' });
     }
@@ -40,21 +40,21 @@ router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { limit = 50, offset = 0, type } = req.query;
 
-    let query = `
+    let sqlQuery = `
       SELECT * FROM notifications 
       WHERE user_id = ?
     `;
     const queryParams = [userId];
 
     if (type) {
-      query += ' AND type = ?';
+      sqlQuery += ' AND type = ?';
       queryParams.push(type);
     }
 
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    sqlQuery += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     queryParams.push(parseInt(limit), parseInt(offset));
 
-    const [notifications] = await pool.execute(query, queryParams);
+    const notifications = await query(sqlQuery, queryParams);
 
     res.json({
       success: true,
@@ -76,14 +76,14 @@ router.get('/preferences', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [preferences] = await pool.execute(
+    const preferences = await query(
       'SELECT * FROM notification_preferences WHERE user_id = ?',
       [userId]
     );
 
     if (preferences.length === 0) {
       // Create default preferences if none exist
-      await pool.execute(
+      await query(
         'INSERT INTO notification_preferences (user_id, order_updates, stock_alerts, price_drops, new_products, promotions) VALUES (?, 1, 1, 1, 1, 1)',
         [userId]
       );
@@ -126,17 +126,20 @@ router.put('/preferences', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { order_updates, stock_alerts, price_drops, new_products, promotions } = req.body;
 
-    await pool.execute(
-      `INSERT INTO notification_preferences (user_id, order_updates, stock_alerts, price_drops, new_products, promotions) 
-       VALUES (?, ?, ?, ?, ?, ?) 
-       ON DUPLICATE KEY UPDATE 
-       order_updates = VALUES(order_updates),
-       stock_alerts = VALUES(stock_alerts),
-       price_drops = VALUES(price_drops),
-       new_products = VALUES(new_products),
-       promotions = VALUES(promotions)`,
-      [userId, order_updates ? 1 : 0, stock_alerts ? 1 : 0, price_drops ? 1 : 0, new_products ? 1 : 0, promotions ? 1 : 0]
-    );
+    // Check if preferences exist
+    const existing = await query('SELECT id FROM notification_preferences WHERE user_id = ?', [userId]);
+    
+    if (existing.length > 0) {
+      await query(
+        'UPDATE notification_preferences SET order_updates = ?, stock_alerts = ?, price_drops = ?, new_products = ?, promotions = ? WHERE user_id = ?',
+        [order_updates ? 1 : 0, stock_alerts ? 1 : 0, price_drops ? 1 : 0, new_products ? 1 : 0, promotions ? 1 : 0, userId]
+      );
+    } else {
+      await query(
+        'INSERT INTO notification_preferences (user_id, order_updates, stock_alerts, price_drops, new_products, promotions) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, order_updates ? 1 : 0, stock_alerts ? 1 : 0, price_drops ? 1 : 0, new_products ? 1 : 0, promotions ? 1 : 0]
+      );
+    }
 
     res.json({
       success: true,
@@ -158,7 +161,7 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const [result] = await pool.execute(
+    const result = await query(
       'UPDATE notifications SET read_status = 1 WHERE id = ? AND user_id = ?',
       [id, userId]
     );
@@ -186,7 +189,7 @@ router.put('/mark-all-read', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    await pool.execute(
+    await query(
       'UPDATE notifications SET read_status = 1 WHERE user_id = ? AND read_status = 0',
       [userId]
     );
@@ -211,7 +214,7 @@ router.delete('/clear-all', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // Delete all notifications for the user
-    const [result] = await pool.execute(
+    const result = await query(
       'DELETE FROM notifications WHERE user_id = ?',
       [userId]
     );
@@ -237,7 +240,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // Delete the notification (only if it belongs to the user)
-    const [result] = await pool.execute(
+    const result = await query(
       'DELETE FROM notifications WHERE id = ? AND user_id = ?',
       [id, userId]
     );
@@ -269,7 +272,7 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
 
-    await pool.execute(
+    await query(
       'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
       [userId, type, title, message, JSON.stringify(data)]
     );

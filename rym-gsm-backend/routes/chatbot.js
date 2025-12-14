@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/database');
+const { query } = require('../config/database');
 
 // Phone store knowledge base for common questions
 const phoneStoreKnowledge = {
@@ -68,7 +68,7 @@ function findBestResponse(userMessage) {
 async function getCurrentPromotions() {
   try {
     // Get products with discounts (where price < original_price)
-    const [promotions] = await pool.execute(
+    const promotions = await query(
       'SELECT name, brand, price, original_price FROM products WHERE original_price > price ORDER BY ((original_price - price) / original_price) DESC LIMIT 5'
     );
     
@@ -92,10 +92,10 @@ async function getCurrentPromotions() {
 }
 
 // Function to get product-specific information
-async function getProductInfo(query) {
+async function getProductInfo(searchQuery) {
   try {
-    const searchTerm = `%${query}%`;
-    const [products] = await pool.execute(
+    const searchTerm = `%${searchQuery}%`;
+    const products = await query(
       'SELECT name, brand, price, original_price FROM products WHERE name LIKE ? OR brand LIKE ? LIMIT 3',
       [searchTerm, searchTerm]
     );
@@ -167,23 +167,23 @@ async function getPersonalizedRecommendations(sessionId, intent) {
     // Get user's conversation history
     const context = conversationContexts.get(sessionId) || { interests: [], priceRange: null, brand: null };
     
-    let query = 'SELECT name, brand, price, original_price, images FROM products WHERE 1=1';
+    let sqlQuery = 'SELECT name, brand, price, original_price, images FROM products WHERE 1=1';
     const params = [];
     
     // Filter based on user's interests
     if (context.brand) {
-      query += ' AND brand LIKE ?';
+      sqlQuery += ' AND brand LIKE ?';
       params.push(`%${context.brand}%`);
     }
     
     if (context.priceRange) {
-      query += ' AND price BETWEEN ? AND ?';
+      sqlQuery += ' AND price BETWEEN ? AND ?';
       params.push(context.priceRange.min, context.priceRange.max);
     }
     
-    query += ' ORDER BY RAND() LIMIT 3';
+    sqlQuery += ' ORDER BY RANDOM() LIMIT 3';
     
-    const [products] = await pool.execute(query, params);
+    const products = await query(sqlQuery, params);
     
     if (products.length > 0) {
       let response = "🎯 **Based on our conversation, I recommend these phones:**\n\n";
@@ -374,7 +374,7 @@ router.post('/message', async (req, res) => {
     
     // Store conversation in database (optional)
     try {
-      await pool.execute(
+      await query(
         'INSERT INTO chatbot_conversations (session_id, user_message, bot_response, created_at) VALUES (?, ?, ?, NOW())',
         [sessionId || 'anonymous', message, botResponse]
       );
