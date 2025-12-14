@@ -98,10 +98,15 @@ if (DATABASE_URL) {
 }
 
 // Unified query function that works with both databases
+// Returns just rows for simpler usage (not [rows, fields])
 async function query(sql, params = []) {
   try {
     const [rows, fields] = await pool.execute(sql, params);
-    return [rows, fields];
+    // Attach metadata to the rows array for operations that need it
+    rows.rowCount = fields.rowCount;
+    rows.affectedRows = fields.affectedRows;
+    rows.insertId = fields.insertId;
+    return rows;
   } catch (error) {
     console.error('Database query error:', error.message);
     throw error;
