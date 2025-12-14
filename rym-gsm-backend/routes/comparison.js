@@ -49,10 +49,10 @@ router.get('/products/:ids', async (req, res) => {
         name,
         brand,
         price,
-        original_price,
+        price as original_price,
         description,
         images,
-        stock_quantity,
+        stock as stock_quantity,
         category,
         specs,
         created_at
@@ -144,7 +144,7 @@ router.get('/similar/:id', async (req, res) => {
         name,
         brand,
         price,
-        original_price,
+        price as original_price,
         images,
         category
       FROM products 

@@ -81,7 +81,7 @@ export const ComparisonProvider = ({ children }) => {
     setLoading(true);
     try {
       const productIds = comparisonList.map(item => item.id).join(',');
-      const response = await axios.get(`http://localhost:5000/api/comparison/products/${productIds}`);
+      const response = await axios.get(`/api/comparison/products/${productIds}`);
       
       if (response.data.success) {
         return response.data.data;
@@ -100,7 +100,7 @@ export const ComparisonProvider = ({ children }) => {
   // Get similar products for suggestions
   const getSimilarProducts = async (productId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/comparison/similar/${productId}`);
+      const response = await axios.get(`/api/comparison/similar/${productId}`);
       
       if (response.data.success) {
         return response.data.data;
