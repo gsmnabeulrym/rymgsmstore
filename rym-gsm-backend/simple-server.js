@@ -1608,10 +1608,10 @@ app.use('/api/comparison', comparisonRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/notifications', adminNotificationRoutes);
 app.use('/api', cartRoutes);
-app.use('/api', orderRoutes);
+app.use('/api', wishlistRoutes); // Wishlist BEFORE orders (orders has /:id that catches everything)
 app.use('/api', reviewRoutes);
 app.use('/api', searchRoutes);
-app.use('/api', wishlistRoutes);
+app.use('/api', orderRoutes); // Orders after wishlist
 app.use('/api', productsRoutes); // Products last because it has catch-all /:id route
 
 console.log('🔗 Notification routes mounted at: /api/notifications');

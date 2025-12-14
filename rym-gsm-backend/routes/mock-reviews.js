@@ -31,15 +31,25 @@ const authenticateToken = async (req, res, next) => {
 // Helper function to calculate average rating for a product
 const calculateProductRating = async (productId) => {
   try {
-    const rows = await query(
-      "SELECT AVG(rating) as average, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = 'approved'",
-      [productId]
-    );
+    // Try with status column first, fallback to without
+    let rows;
+    try {
+      rows = await query(
+        "SELECT AVG(rating) as average, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = 'approved'",
+        [productId]
+      );
+    } catch (e) {
+      // Fallback if status column doesn't exist
+      rows = await query(
+        "SELECT AVG(rating) as average, COUNT(*) as count FROM reviews WHERE product_id = ?",
+        [productId]
+      );
+    }
     
     const result = rows[0];
     return {
       average: result.average ? parseFloat(result.average).toFixed(1) : 0,
-      count: result.count || 0
+      count: parseInt(result.count) || 0
     };
   } catch (error) {
     console.error('Error calculating product rating:', error);
@@ -50,10 +60,20 @@ const calculateProductRating = async (productId) => {
 // Helper function to get rating distribution
 const getRatingDistribution = async (productId) => {
   try {
-    const rows = await query(
-      "SELECT rating, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = 'approved' GROUP BY rating",
-      [productId]
-    );
+    // Try with status column first, fallback to without
+    let rows;
+    try {
+      rows = await query(
+        "SELECT rating, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = 'approved' GROUP BY rating",
+        [productId]
+      );
+    } catch (e) {
+      // Fallback if status column doesn't exist
+      rows = await query(
+        "SELECT rating, COUNT(*) as count FROM reviews WHERE product_id = ? GROUP BY rating",
+        [productId]
+      );
+    }
     
     const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     rows.forEach(row => {
