@@ -507,11 +507,11 @@ app.get('/api/products', async (req, res) => {
     
     console.log(`✅ Found ${rows.length} products, Total: ${totalProducts}`);
     
-    // Parse JSON fields
+    // Parse JSON fields - handle both string (MySQL) and object (PostgreSQL JSONB)
     const products = rows.map(product => ({
       ...product,
-      images: JSON.parse(product.images || '[]'),
-      specs: JSON.parse(product.specs || '{}')
+      images: typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []),
+      specs: typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {})
     }));
     
     res.json({
@@ -551,8 +551,8 @@ app.get('/api/products/:id', async (req, res) => {
     
     const product = {
       ...rows[0],
-      images: JSON.parse(rows[0].images || '[]'),
-      specs: JSON.parse(rows[0].specs || '{}')
+      images: typeof rows[0].images === 'string' ? JSON.parse(rows[0].images || '[]') : (rows[0].images || []),
+      specs: typeof rows[0].specs === 'string' ? JSON.parse(rows[0].specs || '{}') : (rows[0].specs || {})
     };
     
     res.json({ product });

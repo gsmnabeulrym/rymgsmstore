@@ -162,11 +162,11 @@ router.get('/', async (req, res) => {
     const countResult = await query(countQuery, countParams);
     const total = countResult[0].total;
 
-    // Parse JSON fields
+    // Parse JSON fields - handle both string (MySQL) and object (PostgreSQL JSONB)
     const formattedProducts = products.map(product => ({
       ...product,
-      images: JSON.parse(product.images),
-      specs: JSON.parse(product.specs)
+      images: typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []),
+      specs: typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {})
     }));
 
     res.json({
@@ -200,8 +200,8 @@ router.get('/:id', async (req, res) => {
     }
 
     const product = products[0];
-    product.images = JSON.parse(product.images);
-    product.specs = JSON.parse(product.specs);
+    product.images = typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []);
+    product.specs = typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {});
 
     res.json({ product });
 
