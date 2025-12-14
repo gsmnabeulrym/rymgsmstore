@@ -32,11 +32,11 @@ class NotificationService {
         LEFT JOIN notification_preferences np ON u.id = np.user_id 
         WHERE u.role = 'user' 
         AND (
-          (? = 'new_product' AND (np.new_products = 1 OR np.new_products IS NULL))
-          OR (? = 'promotion' AND (np.promotions = 1 OR np.promotions IS NULL))
-          OR (? = 'order_update' AND (np.order_updates = 1 OR np.order_updates IS NULL))
-          OR (? = 'stock_alert' AND (np.stock_alerts = 1 OR np.stock_alerts IS NULL))
-          OR (? = 'price_drop' AND (np.price_drops = 1 OR np.price_drops IS NULL))
+          (? = 'new_product' AND (np.new_products = true OR np.new_products IS NULL))
+          OR (? = 'promotion' AND (np.promotions = true OR np.promotions IS NULL))
+          OR (? = 'order_update' AND (np.order_updates = true OR np.order_updates IS NULL))
+          OR (? = 'stock_alert' AND (np.stock_alerts = true OR np.stock_alerts IS NULL))
+          OR (? = 'price_drop' AND (np.price_drops = true OR np.price_drops IS NULL))
           OR ? = 'system'
         )
       `, [notificationType, notificationType, notificationType, notificationType, notificationType, notificationType]);
@@ -156,7 +156,7 @@ class NotificationService {
           JOIN wishlist w ON u.id = w.user_id 
           LEFT JOIN notification_preferences np ON u.id = np.user_id
           WHERE w.product_id = ? 
-          AND (np.price_drops = 1 OR np.price_drops IS NULL)
+          AND (np.price_drops = true OR np.price_drops IS NULL)
         `, [productId]);
         
         users = wishlistUsers || [];
@@ -171,7 +171,7 @@ class NotificationService {
           JOIN wishlist w ON u.id = w.user_id 
           LEFT JOIN notification_preferences np ON u.id = np.user_id
           WHERE w.product_id = ? 
-          AND (np.stock_alerts = 1 OR np.stock_alerts IS NULL)
+          AND (np.stock_alerts = true OR np.stock_alerts IS NULL)
         `, [productId]);
         
         users = wishlistUsers || [];
