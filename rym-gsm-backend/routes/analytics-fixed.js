@@ -1,5 +1,5 @@
 const express = require('express');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 const router = express.Router();
 
 // Minimal authentication (allow all for testing)
@@ -9,10 +9,10 @@ const allowAll = (req, res, next) => {
 };
 
 // Helper function to safely execute queries
-async function safeQuery(query, params = []) {
+async function safeQuery(sql, params = []) {
   try {
-    const [rows] = await pool.execute(query, params);
-    return rows;
+    const rows = await query(sql, params);
+    return rows || [];
   } catch (error) {
     console.log(`Query failed: ${error.message}`);
     return [];
@@ -69,7 +69,7 @@ router.get('/overview', allowAll, async (req, res) => {
         COUNT(*) as today_orders,
         COALESCE(SUM(CASE WHEN status = 'delivered' THEN total ELSE 0 END), 0) as today_revenue
       FROM orders 
-      WHERE DATE(created_at) = CURDATE()
+      WHERE DATE(created_at) = CURRENT_DATE
     `);
 
     const todayOrders = todayStats[0]?.today_orders || 0;
@@ -81,7 +81,8 @@ router.get('/overview', allowAll, async (req, res) => {
         COUNT(*) as month_orders,
         COALESCE(SUM(CASE WHEN status = 'delivered' THEN total ELSE 0 END), 0) as month_revenue
       FROM orders 
-      WHERE YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())
+      WHERE EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM CURRENT_DATE) 
+        AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE)
     `);
 
     const monthOrders = monthStats[0]?.month_orders || 0;
@@ -133,21 +134,21 @@ router.get('/sales-chart', allowAll, async (req, res) => {
     let dateRange;
     switch (period) {
       case '30days':
-        dateRange = 'created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)';
+        dateRange = "created_at >= CURRENT_DATE - INTERVAL '30 days'";
         break;
       case '7days':
       default:
-        dateRange = 'created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
+        dateRange = "created_at >= CURRENT_DATE - INTERVAL '7 days'";
     }
 
     const salesData = await safeQuery(`
       SELECT 
-        DATE_FORMAT(created_at, '%Y-%m-%d') as period,
+        TO_CHAR(created_at, 'YYYY-MM-DD') as period,
         COUNT(*) as orders,
         COALESCE(SUM(CASE WHEN status = 'delivered' THEN total ELSE 0 END), 0) as revenue
       FROM orders 
       WHERE ${dateRange}
-      GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
+      GROUP BY TO_CHAR(created_at, 'YYYY-MM-DD')
       ORDER BY period ASC
     `);
 
@@ -306,7 +307,7 @@ router.get('/chatbot-insights', allowAll, async (req, res) => {
         DATE(created_at) as date,
         COUNT(DISTINCT session_id) as conversations
       FROM chatbot_conversations
-      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+      WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `);
@@ -369,7 +370,7 @@ router.get('/inventory-performance', allowAll, async (req, res) => {
         p.name,
         p.brand,
         p.price,
-        DATEDIFF(CURDATE(), p.created_at) as days_in_inventory
+        EXTRACT(DAY FROM (CURRENT_DATE - p.created_at)) as days_in_inventory
       FROM products p
       LEFT JOIN order_items oi ON p.id = oi.product_id
       WHERE oi.product_id IS NULL
