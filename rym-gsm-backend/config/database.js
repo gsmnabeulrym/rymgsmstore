@@ -103,9 +103,11 @@ async function query(sql, params = []) {
   try {
     const [rows, fields] = await pool.execute(sql, params);
     // Attach metadata to the rows array for operations that need it
-    rows.rowCount = fields.rowCount;
-    rows.affectedRows = fields.affectedRows;
-    rows.insertId = fields.insertId;
+    if (fields) {
+      rows.rowCount = fields.rowCount || 0;
+      rows.affectedRows = fields.affectedRows || fields.rowCount || 0;
+      rows.insertId = fields.insertId;
+    }
     return rows;
   } catch (error) {
     console.error('Database query error:', error.message);
