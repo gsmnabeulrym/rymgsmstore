@@ -1149,7 +1149,8 @@ app.put('/api/orders/:id/status', async (req, res) => {
       [status, orderId]
     );
     
-    if (result.affectedRows === 0) {
+    const rowsAffected = result.rowCount || result.affectedRows || 0;
+    if (rowsAffected === 0) {
       return res.status(404).json({
         success: false,
         message: 'Order not found'

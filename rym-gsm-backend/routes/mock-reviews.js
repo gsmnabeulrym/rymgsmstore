@@ -289,7 +289,8 @@ router.put('/reviews/:reviewId', authenticateToken, async (req, res) => {
       [status, reviewId]
     );
     
-    if (result.affectedRows === 0) {
+    const rowsAffected = result.rowCount || result.affectedRows || 0;
+    if (rowsAffected === 0) {
       return res.status(404).json({ message: 'Review not found' });
     }
     

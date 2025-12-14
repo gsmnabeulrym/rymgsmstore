@@ -410,7 +410,8 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
       [id]
     );
 
-    if (result.affectedRows === 0) {
+    const rowsAffected = result.rowCount || result.affectedRows || 0;
+    if (rowsAffected === 0) {
       return res.status(404).json({ message: 'Product not found' });
     }
 

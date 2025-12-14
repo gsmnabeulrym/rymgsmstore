@@ -212,7 +212,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
         console.log('🏷️ Updating product price for promotion...');
         
         // Get current product details
-        const [productRows] = await pool.execute(
+        const productRows = await query(
           'SELECT id, name, brand, price, original_price, images FROM products WHERE id = ?',
           [data.productId]
         );
@@ -242,12 +242,12 @@ router.post('/', authenticateAdmin, async (req, res) => {
         
         // Update product price and set original_price if not already set
         if (!product.original_price) {
-          await pool.execute(
+          await query(
             'UPDATE products SET price = ?, original_price = ? WHERE id = ?',
             [newPrice, currentPrice, data.productId]
           );
         } else {
-          await pool.execute(
+          await query(
             'UPDATE products SET price = ? WHERE id = ?',
             [newPrice, data.productId]
           );
@@ -273,8 +273,8 @@ router.post('/', authenticateAdmin, async (req, res) => {
         const promotionMessage = `${message}\n\n🏷️ ${product.brand} ${product.name}\n💰 ${originalPrice} Dt → ${newPrice} Dt\n💸 Save ${savings} Dt (${discountPercent}% off!)`;
         
         // First, get the first available user ID (since user_id = 1 doesn't exist)
-        const [users] = await pool.execute('SELECT id FROM users ORDER BY id LIMIT 1');
-        const userId = users.length > 0 ? users[0].id : null;
+        const usersPromo = await query('SELECT id FROM users ORDER BY id LIMIT 1');
+        const userId = usersPromo.length > 0 ? usersPromo[0].id : null;
         
         if (!userId) {
           return res.status(500).json({ error: 'No users found in database' });
@@ -283,7 +283,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
         console.log(`🔍 Using user_id ${userId} for "all users" notification`);
         
         // Create one notification for all users (using first available user_id for "all users")
-        await pool.execute(
+        await query(
           'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
           [userId, 'promotion', `🎉 ${title}`, promotionMessage, JSON.stringify(enhancedData)]
         );
@@ -300,8 +300,8 @@ router.post('/', authenticateAdmin, async (req, res) => {
         
       } else {
         // Get the first available user ID for "all users" notifications
-        const [users] = await pool.execute('SELECT id FROM users ORDER BY id LIMIT 1');
-        const userId = users.length > 0 ? users[0].id : null;
+        const usersGeneral = await query('SELECT id FROM users ORDER BY id LIMIT 1');
+        const userId = usersGeneral.length > 0 ? usersGeneral[0].id : null;
         
         if (!userId) {
           return res.status(500).json({ error: 'No users found in database' });
@@ -310,7 +310,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
         console.log(`🔍 Using user_id ${userId} for "all users" notification`);
         
         // Regular promotion without specific product - create one notification for all users
-        await pool.execute(
+        await query(
           'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
           [userId, 'promotion', `🎉 ${title}`, message, JSON.stringify(data)]
         );
@@ -319,8 +319,8 @@ router.post('/', authenticateAdmin, async (req, res) => {
       }
     } else if (type === 'system') {
       // Get the first available user ID for "all users" notifications
-      const [users] = await pool.execute('SELECT id FROM users ORDER BY id LIMIT 1');
-      const userId = users.length > 0 ? users[0].id : null;
+      const usersSystem = await query('SELECT id FROM users ORDER BY id LIMIT 1');
+      const userId = usersSystem.length > 0 ? usersSystem[0].id : null;
       
       if (!userId) {
         return res.status(500).json({ error: 'No users found in database' });
@@ -329,7 +329,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
       console.log(`🔍 Using user_id ${userId} for "all users" notification`);
       
       // Create one system notification for all users
-      await pool.execute(
+      await query(
         'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
         [userId, 'system', `📢 ${title}`, message, JSON.stringify(data)]
       );
@@ -337,8 +337,8 @@ router.post('/', authenticateAdmin, async (req, res) => {
       console.log(`✅ Created single system notification for all users`);
     } else {
       // Get the first available user ID for "all users" notifications
-      const [users] = await pool.execute('SELECT id FROM users ORDER BY id LIMIT 1');
-      const userId = users.length > 0 ? users[0].id : null;
+      const usersOther = await query('SELECT id FROM users ORDER BY id LIMIT 1');
+      const userId = usersOther.length > 0 ? usersOther[0].id : null;
       
       if (!userId) {
         return res.status(500).json({ error: 'No users found in database' });
@@ -347,7 +347,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
       console.log(`🔍 Using user_id ${userId} for "all users" notification`);
       
       // Create one notification for all users (for other notification types)
-      await pool.execute(
+      await query(
         'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
         [userId, type, title, message, JSON.stringify(data)]
       );
@@ -403,8 +403,8 @@ router.post('/:id/end-promotion', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     
     // Get notification details
-    const [notifications] = await pool.execute(
-      'SELECT * FROM notifications WHERE id = ? AND type = "promotion"',
+    const notifications = await query(
+      "SELECT * FROM notifications WHERE id = ? AND type = 'promotion'",
       [parseInt(id)]
     );
     
@@ -422,7 +422,7 @@ router.post('/:id/end-promotion', authenticateAdmin, async (req, res) => {
     
     if (data.productId) {
       // Get product details
-      const [productRows] = await pool.execute(
+      const productRows = await query(
         'SELECT id, name, brand, price, original_price FROM products WHERE id = ?',
         [data.productId]
       );
@@ -432,7 +432,7 @@ router.post('/:id/end-promotion', authenticateAdmin, async (req, res) => {
         const originalPrice = parseFloat(product.original_price);
         
         // Restore original price
-        await pool.execute(
+        await query(
           'UPDATE products SET price = ?, original_price = NULL WHERE id = ?',
           [originalPrice, data.productId]
         );
@@ -440,7 +440,7 @@ router.post('/:id/end-promotion', authenticateAdmin, async (req, res) => {
         console.log(`✅ Promotion ended for ${product.name}, price restored to ${originalPrice} Dt`);
         
         // Mark notification as ended (you could add an 'ended' status column)
-        await pool.execute(
+        await query(
           'UPDATE notifications SET data = ? WHERE id = ?',
           [JSON.stringify({ ...data, ended: true, endedAt: new Date().toISOString() }), parseInt(id)]
         );
@@ -480,9 +480,10 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
-    const [result] = await pool.execute('DELETE FROM notifications WHERE id = ?', [parseInt(id)]);
+    const result = await query('DELETE FROM notifications WHERE id = ?', [parseInt(id)]);
     
-    if (result.affectedRows === 0) {
+    const rowsAffected = result.rowCount || result.affectedRows || 0;
+    if (rowsAffected === 0) {
       return res.status(404).json({
         success: false,
         message: 'Notification not found'

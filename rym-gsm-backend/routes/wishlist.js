@@ -133,7 +133,9 @@ router.delete('/wishlist/remove/:productId', authenticateToken, async (req, res)
       [userId, productId]
     );
 
-    if (result.affectedRows === 0) {
+    // PostgreSQL uses rowCount, MySQL uses affectedRows
+    const rowsAffected = result.rowCount || result.affectedRows || 0;
+    if (rowsAffected === 0) {
       return res.status(404).json({ 
         success: false, 
         message: 'Product not found in wishlist' 

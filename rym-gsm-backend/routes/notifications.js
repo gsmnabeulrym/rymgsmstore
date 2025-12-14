@@ -166,7 +166,8 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
       [id, userId]
     );
 
-    if (result.affectedRows === 0) {
+    const rowsAffected = result.rowCount || result.affectedRows || 0;
+    if (rowsAffected === 0) {
       return res.status(404).json({ message: 'Notification not found' });
     }
 
@@ -219,10 +220,11 @@ router.delete('/clear-all', authenticateToken, async (req, res) => {
       [userId]
     );
 
+    const deletedCount = result.rowCount || result.affectedRows || 0;
     res.json({ 
       success: true, 
-      message: `Cleared ${result.affectedRows} notifications`,
-      deletedCount: result.affectedRows
+      message: `Cleared ${deletedCount} notifications`,
+      deletedCount: deletedCount
     });
   } catch (error) {
     console.error('Error clearing all notifications:', error);
@@ -245,7 +247,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       [id, userId]
     );
 
-    if (result.affectedRows === 0) {
+    const rowsAffected = result.rowCount || result.affectedRows || 0;
+    if (rowsAffected === 0) {
       return res.status(404).json({ message: 'Notification not found' });
     }
 

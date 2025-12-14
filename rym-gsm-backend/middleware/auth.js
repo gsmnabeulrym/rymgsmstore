@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'rym-gsm-secret-key-2024';
 
@@ -17,7 +17,7 @@ const authenticateToken = async (req, res, next) => {
     console.log('[Auth] Token decoded, userId:', decoded.userId);
     
     // Get user from database
-    const [users] = await pool.execute(
+    const users = await query(
       'SELECT id, name, email, role FROM users WHERE id = ?',
       [decoded.userId]
     );
