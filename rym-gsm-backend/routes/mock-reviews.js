@@ -31,25 +31,15 @@ const authenticateToken = async (req, res, next) => {
 // Helper function to calculate average rating for a product
 const calculateProductRating = async (productId) => {
   try {
-    // Try with status column first, fallback to without
-    let rows;
-    try {
-      rows = await query(
-        "SELECT AVG(rating) as average, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = 'approved'",
-        [productId]
-      );
-    } catch (e) {
-      // Fallback if status column doesn't exist
-      rows = await query(
-        "SELECT AVG(rating) as average, COUNT(*) as count FROM reviews WHERE product_id = ?",
-        [productId]
-      );
-    }
+    const rows = await query(
+      "SELECT AVG(rating) as average, COUNT(*) as count FROM reviews WHERE product_id = ?",
+      [productId]
+    );
     
     const result = rows[0];
     return {
-      average: result.average ? parseFloat(result.average).toFixed(1) : 0,
-      count: parseInt(result.count) || 0
+      average: result && result.average ? parseFloat(result.average).toFixed(1) : 0,
+      count: result ? parseInt(result.count) || 0 : 0
     };
   } catch (error) {
     console.error('Error calculating product rating:', error);
@@ -60,24 +50,14 @@ const calculateProductRating = async (productId) => {
 // Helper function to get rating distribution
 const getRatingDistribution = async (productId) => {
   try {
-    // Try with status column first, fallback to without
-    let rows;
-    try {
-      rows = await query(
-        "SELECT rating, COUNT(*) as count FROM reviews WHERE product_id = ? AND status = 'approved' GROUP BY rating",
-        [productId]
-      );
-    } catch (e) {
-      // Fallback if status column doesn't exist
-      rows = await query(
-        "SELECT rating, COUNT(*) as count FROM reviews WHERE product_id = ? GROUP BY rating",
-        [productId]
-      );
-    }
+    const rows = await query(
+      "SELECT rating, COUNT(*) as count FROM reviews WHERE product_id = ? GROUP BY rating",
+      [productId]
+    );
     
     const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     rows.forEach(row => {
-      distribution[row.rating] = row.count;
+      distribution[row.rating] = parseInt(row.count);
     });
     
     return distribution;
@@ -115,14 +95,14 @@ router.get('/products/:productId/reviews', async (req, res) => {
       SELECT r.*, u.name as user_name 
       FROM reviews r 
       JOIN users u ON r.user_id = u.id 
-      WHERE r.product_id = ? AND r.status = 'approved' 
+      WHERE r.product_id = ? 
       ORDER BY ${orderBy} 
       LIMIT ? OFFSET ?
     `, [productId, limit, offset]);
     
     // Get total count for pagination
     const countResult = await query(
-      "SELECT COUNT(*) as total FROM reviews WHERE product_id = ? AND status = 'approved'",
+      "SELECT COUNT(*) as total FROM reviews WHERE product_id = ?",
       [productId]
     );
     const totalReviews = countResult[0].total;

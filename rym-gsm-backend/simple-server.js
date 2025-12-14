@@ -666,8 +666,8 @@ app.put('/api/products/:id', async (req, res) => {
     const [updated] = await pool.execute('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
     const product = {
       ...updated[0],
-      images: JSON.parse(updated[0].images || '[]'),
-      specs: JSON.parse(updated[0].specs || '{}')
+      images: typeof updated[0].images === 'string' ? JSON.parse(updated[0].images || '[]') : (updated[0].images || []),
+      specs: typeof updated[0].specs === 'string' ? JSON.parse(updated[0].specs || '{}') : (updated[0].specs || {})
     };
 
     res.json({
@@ -692,8 +692,8 @@ app.delete('/api/products/:id', async (req, res) => {
 
     const deletedProduct = {
       ...existing[0],
-      images: JSON.parse(existing[0].images || '[]'),
-      specs: JSON.parse(existing[0].specs || '{}')
+      images: typeof existing[0].images === 'string' ? JSON.parse(existing[0].images || '[]') : (existing[0].images || []),
+      specs: typeof existing[0].specs === 'string' ? JSON.parse(existing[0].specs || '{}') : (existing[0].specs || {})
     };
 
     // Delete product
@@ -722,7 +722,7 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
     let cart = { products: [], total: 0 };
     
     if (rows.length > 0) {
-      let products = JSON.parse(rows[0].products || '[]');
+      let products = typeof rows[0].products === 'string' ? JSON.parse(rows[0].products || '[]') : (rows[0].products || []);
       
       // Fetch actual product images for products that don't have images stored
       for (let i = 0; i < products.length; i++) {
@@ -733,7 +733,7 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
               [products[i].productId]
             );
             if (productRows.length > 0 && productRows[0].images) {
-              const images = JSON.parse(productRows[0].images || '[]');
+              const images = typeof productRows[0].images === 'string' ? JSON.parse(productRows[0].images || '[]') : (productRows[0].images || []);
               products[i].image = images[0] || '';
             }
           } catch (err) {
@@ -774,7 +774,7 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
     
     const product = {
       ...productRows[0],
-      images: JSON.parse(productRows[0].images || '[]')
+      images: typeof productRows[0].images === 'string' ? JSON.parse(productRows[0].images || '[]') : (productRows[0].images || [])
     };
 
     // Get existing cart
@@ -786,7 +786,7 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
     let cartProducts = [];
     
     if (cartRows.length > 0) {
-      cartProducts = JSON.parse(cartRows[0].products || '[]');
+      cartProducts = typeof cartRows[0].products === 'string' ? JSON.parse(cartRows[0].products || '[]') : (cartRows[0].products || []);
     }
     
     const existingItemIndex = cartProducts.findIndex(item => item.productId === parseInt(productId));
@@ -845,7 +845,7 @@ app.put('/api/cart/update', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Cart not found' });
     }
     
-    let cartProducts = JSON.parse(cartRows[0].products || '[]');
+    let cartProducts = typeof cartRows[0].products === 'string' ? JSON.parse(cartRows[0].products || '[]') : (cartRows[0].products || []);
     const itemIndex = cartProducts.findIndex(item => item.productId === parseInt(productId));
     
     if (itemIndex === -1) {
@@ -889,7 +889,7 @@ app.delete('/api/cart/remove/:productId', authenticateToken, async (req, res) =>
       return res.status(404).json({ message: 'Cart not found' });
     }
     
-    let cartProducts = JSON.parse(cartRows[0].products || '[]');
+    let cartProducts = typeof cartRows[0].products === 'string' ? JSON.parse(cartRows[0].products || '[]') : (cartRows[0].products || []);
     const itemIndex = cartProducts.findIndex(item => item.productId === parseInt(productId));
     
     if (itemIndex === -1) {
@@ -943,7 +943,7 @@ app.get('/api/orders/my-orders', authenticateToken, async (req, res) => {
     
     // Process orders and fetch missing product images
     const orders = await Promise.all(rows.map(async (order) => {
-      let products = JSON.parse(order.products || '[]');
+      let products = typeof order.products === 'string' ? JSON.parse(order.products || '[]') : (order.products || []);
       
       // Fetch actual product images for products that don't have images stored
       for (let i = 0; i < products.length; i++) {
@@ -954,7 +954,7 @@ app.get('/api/orders/my-orders', authenticateToken, async (req, res) => {
               [products[i].productId]
             );
             if (productRows.length > 0 && productRows[0].images) {
-              const images = JSON.parse(productRows[0].images || '[]');
+              const images = typeof productRows[0].images === 'string' ? JSON.parse(productRows[0].images || '[]') : (productRows[0].images || []);
               products[i].image = images[0] || '';
             }
           } catch (err) {
@@ -1019,7 +1019,7 @@ app.get('/api/orders/admin/all', async (req, res) => {
     
     const orders = rows.map(order => ({
       ...order,
-      products: JSON.parse(order.products || '[]')
+      products: typeof order.products === 'string' ? JSON.parse(order.products || '[]') : (order.products || [])
     }));
     
     res.json({
@@ -1165,7 +1165,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
     
     const order = {
       ...rows[0],
-      products: JSON.parse(rows[0].products || '[]')
+      products: typeof rows[0].products === 'string' ? JSON.parse(rows[0].products || '[]') : (rows[0].products || [])
     };
 
     res.json({
@@ -1207,7 +1207,7 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    let products = JSON.parse(rows[0].products || '[]');
+    let products = typeof rows[0].products === 'string' ? JSON.parse(rows[0].products || '[]') : (rows[0].products || []);
     
     // Fetch actual product images for products that don't have images stored
     for (let i = 0; i < products.length; i++) {
@@ -1293,7 +1293,7 @@ app.get('/api/admin/dashboard/stats', async (req, res) => {
       }, {}),
       recentOrders: recentOrders.map(order => ({
         ...order,
-        products: JSON.parse(order.products || '[]')
+        products: typeof order.products === 'string' ? JSON.parse(order.products || '[]') : (order.products || [])
       }))
     };
 
