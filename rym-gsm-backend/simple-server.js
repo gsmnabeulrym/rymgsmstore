@@ -1129,6 +1129,8 @@ app.put('/api/orders/:id/status', async (req, res) => {
     const orderId = parseInt(req.params.id);
     const { status } = req.body;
 
+    console.log(`📝 Updating order ${orderId} status to: ${status}`);
+
     if (!['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].includes(status)) {
       return res.status(400).json({
         success: false,
@@ -1142,7 +1144,10 @@ app.put('/api/orders/:id/status', async (req, res) => {
       [status, orderId]
     );
     
+    console.log('📝 Update result:', result);
     const rowsAffected = result.rowCount || result.affectedRows || 0;
+    console.log('📝 Rows affected:', rowsAffected);
+    
     if (rowsAffected === 0) {
       return res.status(404).json({
         success: false,
@@ -1156,21 +1161,33 @@ app.put('/api/orders/:id/status', async (req, res) => {
       [orderId]
     );
     
+    console.log('📝 Fetched order rows:', rows.length);
+    
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found after update'
+      });
+    }
+    
     const order = {
       ...rows[0],
       products: typeof rows[0].products === 'string' ? JSON.parse(rows[0].products || '[]') : (rows[0].products || [])
     };
 
+    console.log('✅ Order status updated successfully');
     res.json({
       success: true,
       message: 'Order status updated successfully',
       order
     });
   } catch (error) {
-    console.error('Error updating order status:', error);
+    console.error('❌ Error updating order status:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
-      message: 'Server error updating order status' 
+      message: 'Server error updating order status',
+      error: error.message
     });
   }
 });
