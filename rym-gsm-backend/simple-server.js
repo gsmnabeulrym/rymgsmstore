@@ -1606,10 +1606,22 @@ app.use('/api', productsRoutes); // Products last because it has catch-all /:id 
 
 console.log('🔗 Notification routes mounted at: /api/notifications');
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'API endpoint not found' });
-});
+// Serve static files from the React frontend build
+const frontendBuildPath = path.join(__dirname, '..', 'rym-gsm-frontend', 'dist');
+if (fs.existsSync(frontendBuildPath)) {
+  app.use(express.static(frontendBuildPath));
+  
+  // Handle React routing - serve index.html for all non-API routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  });
+  console.log('📁 Serving frontend from:', frontendBuildPath);
+} else {
+  // 404 handler for API-only mode
+  app.use('*', (req, res) => {
+    res.status(404).json({ message: 'API endpoint not found' });
+  });
+}
 
 // Error handler
 app.use((err, req, res, next) => {

@@ -34,7 +34,7 @@ CREATE TABLE products (
     brand VARCHAR(50) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     stock INT DEFAULT 0,
-    category VARCHAR(50) DEFAULT 'phone' CHECK (category IN ('phone', 'accessory', 'smartphones', 'ordinateurs', 'tablettes', 'accessoires', 'laptop')),
+    category VARCHAR(50) DEFAULT 'phone',
     images JSONB DEFAULT '[]',
     specs JSONB DEFAULT '{}',
     description TEXT,

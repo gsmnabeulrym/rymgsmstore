@@ -40,7 +40,12 @@ async function deployDatabase() {
 
     // 2. Import Products
     console.log('\n📦 Importing Products...');
-    const products = JSON.parse(fs.readFileSync(PRODUCTS_FILE, 'utf8'));
+    // Remove BOM if present
+    let productsContent = fs.readFileSync(PRODUCTS_FILE, 'utf8');
+    if (productsContent.charCodeAt(0) === 0xFEFF) {
+      productsContent = productsContent.slice(1);
+    }
+    const products = JSON.parse(productsContent);
     console.log(`Found ${products.length} products to import.`);
 
     await client.query('BEGIN'); // Start transaction for data import
