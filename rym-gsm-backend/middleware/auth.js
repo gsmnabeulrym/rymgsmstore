@@ -1,16 +1,20 @@
 const jwt = require('jsonwebtoken');
-const pool = require('../config/database');
+const { pool } = require('../config/database');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'rym-gsm-secret-key-2024';
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
+    console.log('[Auth] No token provided');
     return res.status(401).json({ message: 'Access token required' });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'rym-gsm-secret-key-2024');
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('[Auth] Token decoded, userId:', decoded.userId);
     
     // Get user from database
     const [users] = await pool.execute(
@@ -19,12 +23,15 @@ const authenticateToken = async (req, res, next) => {
     );
 
     if (users.length === 0) {
-      return res.status(401).json({ message: 'Invalid token' });
+      console.log('[Auth] User not found in database');
+      return res.status(401).json({ message: 'User not found' });
     }
 
     req.user = users[0];
+    console.log('[Auth] User authenticated:', users[0].id, users[0].email);
     next();
   } catch (error) {
+    console.log('[Auth] Token verification error:', error.message);
     return res.status(403).json({ message: 'Invalid or expired token' });
   }
 };

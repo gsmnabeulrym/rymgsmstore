@@ -230,8 +230,8 @@ router.post('/', authenticateToken, requireAdmin, [
   body('name').trim().isLength({ min: 1 }).withMessage('Product name required'),
   body('brand').trim().isLength({ min: 1 }).withMessage('Brand required'),
   body('price').isFloat({ min: 0 }).withMessage('Valid price required'),
-  body('stock').isInt({ min: 0 }).withMessage('Valid stock quantity required'),
-  body('category').isIn(['phone', 'accessory']).withMessage('Valid category required'),
+  body('stock').optional().isInt({ min: 0 }).withMessage('Valid stock quantity required'),
+  body('category').isIn(['phone', 'accessory', 'watch', 'tablet', 'laptop']).withMessage('Valid category required'),
   body('images').isArray().withMessage('Images array required'),
   body('specs').isObject().withMessage('Specs object required')
 ], async (req, res) => {
@@ -246,7 +246,11 @@ router.post('/', authenticateToken, requireAdmin, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, brand, price, stock, category, images, specs, description } = req.body;
+    const { name, brand, price, category, images, specs, description } = req.body;
+    // Stock is optional - default to 999 (unlimited) if not provided or empty
+    const stock = (req.body.stock !== undefined && req.body.stock !== null && req.body.stock !== '') 
+      ? parseInt(req.body.stock) 
+      : 999;
 
     const [result] = await pool.execute(
       'INSERT INTO products (name, brand, price, stock, category, images, specs, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -292,7 +296,7 @@ router.put('/:id', authenticateToken, requireAdmin, [
   body('brand').optional().trim().isLength({ min: 1 }).withMessage('Brand required'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Valid price required'),
   body('stock').optional().isInt({ min: 0 }).withMessage('Valid stock quantity required'),
-  body('category').optional().isIn(['phone', 'accessory']).withMessage('Valid category required'),
+  body('category').optional().isIn(['phone', 'accessory', 'watch', 'tablet', 'laptop']).withMessage('Valid category required'),
   body('images').optional().isArray().withMessage('Images array required'),
   body('specs').optional().isObject().withMessage('Specs object required')
 ], async (req, res) => {

@@ -15,8 +15,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="lg:col-span-1">
-            <div className="flex items-center space-x-3 mb-6">
-              <Logo size="lg" />
+            <div className="mb-6">
+              <Logo size="lg" variant="light" />
             </div>
             <p className="text-gray-300 mb-6 leading-relaxed">
               Votre partenaire de confiance pour les smartphones et accessoires premium à Nabeul, Tunisie. 

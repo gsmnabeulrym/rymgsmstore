@@ -11,16 +11,21 @@ const AdminProducts = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [page, setPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [uploadedImages, setUploadedImages] = useState([]);
   const [imageUrls, setImageUrls] = useState('');
+  const [editUploadedImages, setEditUploadedImages] = useState([]);
+  const [editImageUrls, setEditImageUrls] = useState('');
 
   // Fetch products
   const { data: productsData, isLoading } = useQuery({
-    queryKey: ['admin-products', searchTerm, selectedCategory],
+    queryKey: ['admin-products', searchTerm, selectedCategory, page],
     queryFn: () => {
       const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', '10'); // 10 products per page
       if (searchTerm) params.append('search', searchTerm);
       if (selectedCategory) params.append('category', selectedCategory);
       return api.get(`/products?${params.toString()}`).then(res => res.data);
@@ -35,6 +40,7 @@ const AdminProducts = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       setShowAddModal(false);
       resetFormStates();
+      setPage(1); // Reset to first page after creating
       toast.success('Product created successfully');
     },
     onError: (error) => {
@@ -48,6 +54,7 @@ const AdminProducts = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       setEditingProduct(null);
+      resetFormStates();
       toast.success('Product updated successfully');
     },
     onError: (error) => {
@@ -58,8 +65,13 @@ const AdminProducts = () => {
   // Delete product mutation
   const deleteProductMutation = useMutation({
     mutationFn: (productId) => api.delete(`/products/${productId}`),
-    onSuccess: () => {
+    onSuccess: (_, productId) => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      // If current page becomes empty, go to previous page
+      const currentProducts = productsData?.products || [];
+      if (currentProducts.length === 1 && page > 1) {
+        setPage(page - 1);
+      }
       toast.success('Product deleted successfully');
     },
     onError: (error) => {
@@ -67,7 +79,7 @@ const AdminProducts = () => {
     }
   });
 
-  // Handle image file upload
+  // Handle image file upload (for create form)
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const newImages = [];
@@ -86,15 +98,41 @@ const AdminProducts = () => {
     });
   };
 
-  // Remove uploaded image
+  // Handle image file upload (for edit form)
+  const handleEditImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const newImages = [];
+    
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          newImages.push(event.target.result);
+          if (newImages.length === files.length) {
+            setEditUploadedImages(prev => [...prev, ...newImages]);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  };
+
+  // Remove uploaded image (for create form)
   const removeUploadedImage = (index) => {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Remove uploaded image (for edit form)
+  const removeEditUploadedImage = (index) => {
+    setEditUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   // Reset form states
   const resetFormStates = () => {
     setUploadedImages([]);
     setImageUrls('');
+    setEditUploadedImages([]);
+    setEditImageUrls('');
   };
 
   const handleCreateProduct = (e) => {
@@ -115,16 +153,21 @@ const AdminProducts = () => {
     if (formData.get('display')) specs.display = formData.get('display');
     if (formData.get('processor')) specs.processor = formData.get('processor');
     
+    const stockValue = formData.get('stock');
     const productData = {
       name: formData.get('name'),
       brand: formData.get('brand'),
       price: parseFloat(formData.get('price')),
-      stock: parseInt(formData.get('stock')),
       category: formData.get('category'),
       description: formData.get('description'),
       images: allImages,
       specs
     };
+    
+    // Only include stock if provided (optional field)
+    if (stockValue && stockValue.trim() !== '') {
+      productData.stock = parseInt(stockValue);
+    }
     
     createProductMutation.mutate(productData);
   };
@@ -133,7 +176,10 @@ const AdminProducts = () => {
     e.preventDefault();
     const formData = new FormData(e.target);
     
-    const images = formData.get('images').split(',').map(url => url.trim()).filter(url => url);
+    // Combine uploaded images and URL images
+    const urlImages = editImageUrls.split(',').map(url => url.trim()).filter(url => url);
+    const allImages = [...editUploadedImages, ...urlImages];
+    
     const specs = {};
     
     // Parse specs from form
@@ -144,17 +190,22 @@ const AdminProducts = () => {
     if (formData.get('display')) specs.display = formData.get('display');
     if (formData.get('processor')) specs.processor = formData.get('processor');
     
+    const stockValue = formData.get('stock');
     const productData = {
       id: editingProduct.id,
       name: formData.get('name'),
       brand: formData.get('brand'),
       price: parseFloat(formData.get('price')),
-      stock: parseInt(formData.get('stock')),
       category: formData.get('category'),
       description: formData.get('description'),
-      images,
+      images: allImages,
       specs
     };
+    
+    // Only include stock if provided (optional field)
+    if (stockValue && stockValue.trim() !== '') {
+      productData.stock = parseInt(stockValue);
+    }
     
     updateProductMutation.mutate(productData);
   };
@@ -180,8 +231,8 @@ const AdminProducts = () => {
   const products = productsData?.products || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 flex flex-col">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
@@ -210,7 +261,10 @@ const AdminProducts = () => {
                   type="text"
                   placeholder="Search by name or description..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setPage(1); // Reset to first page when searching
+                  }}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -222,12 +276,24 @@ const AdminProducts = () => {
               </label>
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setPage(1); // Reset to first page when filtering
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">All Categories</option>
-                <option value="phone">Phones</option>
-                <option value="accessory">Accessories</option>
+                <option value="">Toutes les Catégories</option>
+                <option value="phone">Téléphones</option>
+                <option value="laptop">Ordinateurs</option>
+                <option value="tablet">Tablettes</option>
+                <option value="watch">Montres</option>
+                <option value="accessory">Accessoires</option>
+                <option value="speaker">Enceintes</option>
+                <option value="earphone">Écouteurs</option>
+                <option value="charger">Chargeurs</option>
+                <option value="case">Coques</option>
+                <option value="powerbank">Batteries Externes</option>
+                <option value="other">Autres</option>
               </select>
             </div>
 
@@ -236,6 +302,7 @@ const AdminProducts = () => {
                 onClick={() => {
                   setSearchTerm('');
                   setSelectedCategory('');
+                  setPage(1); // Reset to first page when clearing filters
                 }}
                 className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
               >
@@ -246,7 +313,7 @@ const AdminProducts = () => {
         </div>
 
         {/* Products Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white rounded-lg shadow-md flex-1 flex flex-col min-h-0">
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -267,9 +334,14 @@ const AdminProducts = () => {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div 
+              className="overflow-x-auto overflow-y-auto flex-1" 
+              style={{ 
+                maxHeight: 'calc(100vh - 400px)'
+              }}
+            >
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Product
@@ -349,7 +421,12 @@ const AdminProducts = () => {
                             <Eye className="h-4 w-4" />
                           </Link>
                           <button
-                            onClick={() => setEditingProduct(product)}
+                            onClick={() => {
+                              setEditingProduct(product);
+                              // Initialize edit form with existing images - load them into editUploadedImages so they can be removed
+                              setEditUploadedImages(product.images || []);
+                              setEditImageUrls('');
+                            }}
                             className="text-yellow-600 hover:text-yellow-900 p-1"
                             title="Edit Product"
                           >
@@ -368,6 +445,96 @@ const AdminProducts = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {productsData?.pagination && productsData.pagination.totalPages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={page === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage(Math.min(productsData.pagination.totalPages, page + 1))}
+                  disabled={page === productsData.pagination.totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing{' '}
+                    <span className="font-medium">
+                      {((page - 1) * productsData.pagination.limit) + 1}
+                    </span>{' '}
+                    to{' '}
+                    <span className="font-medium">
+                      {Math.min(page * productsData.pagination.limit, productsData.pagination.totalProducts || 0)}
+                    </span>{' '}
+                    of{' '}
+                    <span className="font-medium">{productsData.pagination.totalProducts || 0}</span>{' '}
+                    results
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => setPage(Math.max(1, page - 1))}
+                      disabled={page === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    {[...Array(productsData.pagination.totalPages)].map((_, index) => {
+                      const pageNum = index + 1;
+                      // Show first page, last page, current page, and pages around current
+                      if (
+                        pageNum === 1 ||
+                        pageNum === productsData.pagination.totalPages ||
+                        (pageNum >= page - 1 && pageNum <= page + 1)
+                      ) {
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setPage(pageNum)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              page === pageNum
+                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      } else if (pageNum === page - 2 || pageNum === page + 2) {
+                        return (
+                          <span
+                            key={pageNum}
+                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                          >
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
+                    <button
+                      onClick={() => setPage(Math.min(productsData.pagination.totalPages, page + 1))}
+                      disabled={page === productsData.pagination.totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </nav>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -409,11 +576,11 @@ const AdminProducts = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Stock</label>
+                      <label className="block text-sm font-medium text-gray-700">Stock (optional)</label>
                       <input
                         type="number"
                         name="stock"
-                        required
+                        placeholder="Leave empty for unlimited"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
@@ -425,8 +592,17 @@ const AdminProducts = () => {
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Select Category</option>
-                        <option value="phone">Phone</option>
-                        <option value="accessory">Accessory</option>
+                        <option value="phone">Téléphone</option>
+                        <option value="laptop">Ordinateur</option>
+                        <option value="tablet">Tablette</option>
+                        <option value="watch">Montre Connectée</option>
+                        <option value="accessory">Accessoire</option>
+                        <option value="speaker">Enceinte / Haut-parleur</option>
+                        <option value="earphone">Écouteurs / Casque</option>
+                        <option value="charger">Chargeur / Câble</option>
+                        <option value="case">Coque / Protection</option>
+                        <option value="powerbank">Batterie Externe</option>
+                        <option value="other">Autre</option>
                       </select>
                     </div>
                     <div className="md:col-span-2">
@@ -635,12 +811,12 @@ const AdminProducts = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Stock</label>
+                      <label className="block text-sm font-medium text-gray-700">Stock (optional)</label>
                       <input
                         type="number"
                         name="stock"
                         defaultValue={editingProduct.stock}
-                        required
+                        placeholder="Leave empty for unlimited"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
@@ -653,19 +829,87 @@ const AdminProducts = () => {
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Select Category</option>
-                        <option value="phone">Phone</option>
-                        <option value="accessory">Accessory</option>
+                        <option value="phone">Téléphone</option>
+                        <option value="laptop">Ordinateur</option>
+                        <option value="tablet">Tablette</option>
+                        <option value="watch">Montre Connectée</option>
+                        <option value="accessory">Accessoire</option>
+                        <option value="speaker">Enceinte / Haut-parleur</option>
+                        <option value="earphone">Écouteurs / Casque</option>
+                        <option value="charger">Chargeur / Câble</option>
+                        <option value="case">Coque / Protection</option>
+                        <option value="powerbank">Batterie Externe</option>
+                        <option value="other">Autre</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Images (URLs, comma-separated)</label>
-                      <input
-                        type="text"
-                        name="images"
-                        defaultValue={editingProduct.images?.join(', ') || ''}
-                        placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
+                      
+                      {/* File Upload */}
+                      <div className="mb-4">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Upload Images</label>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                      </div>
+
+                      {/* URL Input */}
+                      <div className="mb-4">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Or Add Image URLs (comma-separated)</label>
+                        <input
+                          type="text"
+                          value={editImageUrls}
+                          onChange={(e) => setEditImageUrls(e.target.value)}
+                          placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* Image Preview */}
+                      {(editUploadedImages.length > 0 || editImageUrls) && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-2">Image Preview</label>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {/* Uploaded Images */}
+                            {editUploadedImages.map((image, index) => (
+                              <div key={index} className="relative">
+                                <img
+                                  src={image}
+                                  alt={`Upload ${index + 1}`}
+                                  className="w-full h-20 object-cover rounded-md border"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeEditUploadedImage(index)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                            {/* URL Images Preview */}
+                            {editImageUrls && editImageUrls.split(',').map((url, index) => {
+                              const trimmedUrl = url.trim();
+                              return trimmedUrl ? (
+                                <div key={`url-${index}`} className="relative">
+                                  <img
+                                    src={trimmedUrl}
+                                    alt={`URL ${index + 1}`}
+                                    className="w-full h-20 object-cover rounded-md border"
+                                    onError={(e) => {
+                                      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiA5VjEzTTEyIDE3SDE2TTE2IDlIMTJNMTIgOUw4IDEzTDEyIDE3IiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=';
+                                    }}
+                                  />
+                                </div>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -749,7 +993,10 @@ const AdminProducts = () => {
                   <div className="flex justify-end space-x-3 pt-4">
                     <button
                       type="button"
-                      onClick={() => setEditingProduct(null)}
+                      onClick={() => {
+                        setEditingProduct(null);
+                        resetFormStates();
+                      }}
                       className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                     >
                       Cancel

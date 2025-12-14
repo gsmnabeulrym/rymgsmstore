@@ -568,7 +568,11 @@ app.post('/api/products', async (req, res) => {
     console.log('🛍️ POST /api/products - Product creation via simple-server.js');
     console.log('📋 Request body:', req.body);
     
-    const { name, brand, price, stock, category, images, specs, description } = req.body;
+    const { name, brand, price, category, images, specs, description } = req.body;
+    // Stock is optional - default to 999 (unlimited) if not provided
+    const stockValue = (req.body.stock !== undefined && req.body.stock !== null && req.body.stock !== '') 
+      ? parseInt(req.body.stock) 
+      : 999;
     
     if (!name || !brand || !price || !category) {
       return res.status(400).json({ message: 'Name, brand, price, and category are required' });
@@ -580,7 +584,7 @@ app.post('/api/products', async (req, res) => {
         name,
         brand,
         parseFloat(price),
-        parseInt(stock) || 0,
+        stockValue,
         category,
         JSON.stringify(images || []),
         JSON.stringify(specs || {}),
@@ -606,7 +610,7 @@ app.post('/api/products', async (req, res) => {
       name,
       brand,
       price: parseFloat(price),
-      stock: parseInt(stock) || 0,
+      stock: stockValue,
       category,
       images: images || [],
       specs: specs || {},
@@ -718,8 +722,27 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
     let cart = { products: [], total: 0 };
     
     if (rows.length > 0) {
-      const products = JSON.parse(rows[0].products || '[]');
-      const total = products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      let products = JSON.parse(rows[0].products || '[]');
+      
+      // Fetch actual product images for products that don't have images stored
+      for (let i = 0; i < products.length; i++) {
+        if (!products[i].image && products[i].productId) {
+          try {
+            const [productRows] = await pool.execute(
+              'SELECT images FROM products WHERE id = ?',
+              [products[i].productId]
+            );
+            if (productRows.length > 0 && productRows[0].images) {
+              const images = JSON.parse(productRows[0].images || '[]');
+              products[i].image = images[0] || '';
+            }
+          } catch (err) {
+            // Silently fail
+          }
+        }
+      }
+      
+      const total = products.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
       cart = { products, total };
     }
 
@@ -918,9 +941,32 @@ app.get('/api/orders/my-orders', authenticateToken, async (req, res) => {
       [userId]
     );
     
-    const orders = rows.map(order => ({
-      ...order,
-      products: JSON.parse(order.products || '[]')
+    // Process orders and fetch missing product images
+    const orders = await Promise.all(rows.map(async (order) => {
+      let products = JSON.parse(order.products || '[]');
+      
+      // Fetch actual product images for products that don't have images stored
+      for (let i = 0; i < products.length; i++) {
+        if (!products[i].image && products[i].productId) {
+          try {
+            const [productRows] = await pool.execute(
+              'SELECT images FROM products WHERE id = ?',
+              [products[i].productId]
+            );
+            if (productRows.length > 0 && productRows[0].images) {
+              const images = JSON.parse(productRows[0].images || '[]');
+              products[i].image = images[0] || '';
+            }
+          } catch (err) {
+            // Silently fail
+          }
+        }
+      }
+      
+      return {
+        ...order,
+        products
+      };
     }));
     
     res.json({
@@ -1160,9 +1206,29 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
       });
     }
 
+    let products = JSON.parse(rows[0].products || '[]');
+    
+    // Fetch actual product images for products that don't have images stored
+    for (let i = 0; i < products.length; i++) {
+      if (!products[i].image && products[i].productId) {
+        try {
+          const [productRows] = await pool.execute(
+            'SELECT images FROM products WHERE id = ?',
+            [products[i].productId]
+          );
+          if (productRows.length > 0 && productRows[0].images) {
+            const images = JSON.parse(productRows[0].images || '[]');
+            products[i].image = images[0] || '';
+          }
+        } catch (err) {
+          console.log('Could not fetch product image:', err.message);
+        }
+      }
+    }
+
     const order = {
       ...rows[0],
-      products: JSON.parse(rows[0].products || '[]')
+      products
     };
 
     res.json({

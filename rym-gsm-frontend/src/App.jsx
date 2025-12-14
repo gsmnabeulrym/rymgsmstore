@@ -11,7 +11,6 @@ import { ComparisonProvider } from './contexts/ComparisonContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
-import Chatbot from './components/Chatbot';
 
 // Pages
 import Home from './pages/Home';
@@ -81,7 +80,6 @@ function App() {
               <Footer />
               <ComparisonBar />
               <WhatsAppButton />
-              <Chatbot />
               <Toaster position="top-right" />
             </div>
           </Router>

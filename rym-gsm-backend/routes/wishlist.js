@@ -3,8 +3,10 @@ const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const router = express.Router();
 
-// Middleware to authenticate user
-const authenticateToken = async (req, res, next) => {
+const JWT_SECRET = process.env.JWT_SECRET || 'rym-gsm-secret-key-2024';
+
+// Simple auth middleware matching simple-server.js
+const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -13,17 +15,11 @@ const authenticateToken = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, 'rym-gsm-secret-key-2024');
-    
-    // Get user details from database to include role
-    const [users] = await pool.execute('SELECT id, role FROM users WHERE id = ?', [decoded.userId]);
-    if (users.length === 0) {
-      return res.status(403).json({ message: 'User not found' });
-    }
-    
-    req.user = { id: decoded.userId, role: users[0].role };
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = { id: decoded.userId };
     next();
   } catch (error) {
+    console.log('[Wishlist Auth] Error:', error.message);
     return res.status(403).json({ message: 'Invalid or expired token' });
   }
 };

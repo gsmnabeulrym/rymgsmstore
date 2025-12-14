@@ -38,7 +38,7 @@ const Login = () => {
           {/* Logo and Header */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
-              <Logo size="xl" className="animate-fade-in" />
+              <Logo size="2xl" showText={false} className="animate-fade-in" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Bon Retour !
@@ -166,35 +166,19 @@ const Login = () => {
               </button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500 font-medium">Identifiants de Démo</span>
-                </div>
+            {/* Features */}
+            <div className="mt-8 grid grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-gray-50 rounded-xl">
+                <Shield className="h-5 w-5 text-primary-500 mx-auto mb-1" />
+                <p className="text-xs text-gray-600">Sécurisé</p>
               </div>
-
-              <div className="mt-6 space-y-3">
-                <div className="bg-gradient-to-r from-primary-50 to-purple-50 p-4 rounded-xl border border-primary-100">
-                  <div className="flex items-center mb-2">
-                    <Shield className="h-4 w-4 text-primary-500 mr-2" />
-                    <p className="text-sm font-semibold text-gray-700">Compte Admin</p>
-                  </div>
-                  <p className="text-xs text-gray-600">Email: admin@rymgsm.com</p>
-                  <p className="text-xs text-gray-600">Password: password</p>
-                </div>
-                
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-100">
-                  <div className="flex items-center mb-2">
-                    <Heart className="h-4 w-4 text-purple-500 mr-2" />
-                    <p className="text-sm font-semibold text-gray-700">Compte Client</p>
-                  </div>
-                  <p className="text-xs text-gray-600">Email: customer@example.com</p>
-                  <p className="text-xs text-gray-600">Password: password</p>
-                </div>
+              <div className="text-center p-3 bg-gray-50 rounded-xl">
+                <Zap className="h-5 w-5 text-primary-500 mx-auto mb-1" />
+                <p className="text-xs text-gray-600">Rapide</p>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-xl">
+                <Heart className="h-5 w-5 text-primary-500 mx-auto mb-1" />
+                <p className="text-xs text-gray-600">Fiable</p>
               </div>
             </div>
 

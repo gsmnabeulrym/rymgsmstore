@@ -46,7 +46,7 @@ const Register = () => {
           {/* Logo and Header */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
-              <Logo size="xl" className="animate-fade-in" />
+              <Logo size="2xl" showText={false} className="animate-fade-in" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Rejoignez RYM GSM
