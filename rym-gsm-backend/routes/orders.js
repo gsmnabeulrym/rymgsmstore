@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const notificationService = require('../services/notificationService');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 
 const router = express.Router();
 
@@ -13,21 +13,22 @@ router.post('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // Get user's cart
-    const [carts] = await pool.execute(
+    const carts = await query(
       'SELECT * FROM cart WHERE user_id = ?',
       [userId]
     );
 
-    if (carts.length === 0 || JSON.parse(carts[0].products).length === 0) {
+    const cartData = carts.length > 0 ? (typeof carts[0].products === 'string' ? JSON.parse(carts[0].products) : (carts[0].products || [])) : [];
+    if (carts.length === 0 || cartData.length === 0) {
       return res.status(400).json({ message: 'Cart is empty' });
     }
 
-    const cartProducts = JSON.parse(carts[0].products);
+    const cartProducts = cartData;
     let total = 0;
 
     // Validate stock and calculate total
     for (const item of cartProducts) {
-      const [products] = await pool.execute(
+      const products = await query(
         'SELECT stock, price FROM products WHERE id = ?',
         [item.productId]
       );
@@ -47,21 +48,21 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     // Create order
-    const [result] = await pool.execute(
+    const result = await query(
       'INSERT INTO orders (user_id, products, total, shipping_address) VALUES (?, ?, ?, ?)',
       [userId, JSON.stringify(cartProducts), total, shippingAddress || null]
     );
 
     // Update product stock
     for (const item of cartProducts) {
-      await pool.execute(
+      await query(
         'UPDATE products SET stock = stock - ? WHERE id = ?',
         [item.quantity, item.productId]
       );
     }
 
     // Clear cart
-    await pool.execute(
+    await query(
       'DELETE FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -92,7 +93,7 @@ router.get('/my-orders', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [orders] = await pool.execute(
+    const orders = await query(
       'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
       [userId]
     );
@@ -100,7 +101,7 @@ router.get('/my-orders', authenticateToken, async (req, res) => {
     // Parse products JSON
     const formattedOrders = orders.map(order => ({
       ...order,
-      products: JSON.parse(order.products)
+      products: typeof order.products === 'string' ? JSON.parse(order.products) : (order.products || [])
     }));
 
     res.json({ orders: formattedOrders });
@@ -117,7 +118,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const [orders] = await pool.execute(
+    const orders = await query(
       'SELECT * FROM orders WHERE id = ? AND user_id = ?',
       [id, userId]
     );
@@ -127,7 +128,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 
     const order = orders[0];
-    order.products = JSON.parse(order.products);
+    order.products = typeof order.products === 'string' ? JSON.parse(order.products) : (order.products || []);
 
     res.json({ order });
 
@@ -142,7 +143,7 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
 
-    let query = `
+    let sqlQuery = `
       SELECT o.*, u.name as user_name, u.email as user_email 
       FROM orders o 
       JOIN users u ON o.user_id = u.id
@@ -150,22 +151,22 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
     const queryParams = [];
 
     if (status) {
-      query += ' WHERE o.status = ?';
+      sqlQuery += ' WHERE o.status = ?';
       queryParams.push(status);
     }
 
-    query += ' ORDER BY o.created_at DESC';
+    sqlQuery += ' ORDER BY o.created_at DESC';
 
     const offset = (page - 1) * limit;
-    query += ' LIMIT ? OFFSET ?';
+    sqlQuery += ' LIMIT ? OFFSET ?';
     queryParams.push(parseInt(limit), offset);
 
-    const [orders] = await pool.execute(query, queryParams);
+    const orders = await query(sqlQuery, queryParams);
 
     // Parse products JSON
     const formattedOrders = orders.map(order => ({
       ...order,
-      products: JSON.parse(order.products)
+      products: typeof order.products === 'string' ? JSON.parse(order.products) : (order.products || [])
     }));
 
     // Get total count
@@ -177,7 +178,7 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
       countParams.push(status);
     }
 
-    const [countResult] = await pool.execute(countQuery, countParams);
+    const countResult = await query(countQuery, countParams);
     const total = countResult[0].total;
 
     res.json({
@@ -206,7 +207,7 @@ router.put('/:id/status', authenticateToken, requireAdmin, async (req, res) => {
     }
 
     // Get order details before updating
-    const [orders] = await pool.execute(
+    const orders = await query(
       'SELECT user_id, total FROM orders WHERE id = ?',
       [id]
     );
@@ -217,7 +218,7 @@ router.put('/:id/status', authenticateToken, requireAdmin, async (req, res) => {
 
     const order = orders[0];
 
-    const [result] = await pool.execute(
+    await query(
       'UPDATE orders SET status = ? WHERE id = ?',
       [status, id]
     );

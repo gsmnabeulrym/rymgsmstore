@@ -1,5 +1,5 @@
 const express = require('express');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -9,7 +9,7 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [carts] = await pool.execute(
+    const carts = await query(
       'SELECT * FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -19,7 +19,7 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     const cart = carts[0];
-    cart.products = JSON.parse(cart.products);
+    cart.products = typeof cart.products === 'string' ? JSON.parse(cart.products) : (cart.products || []);
 
     // Calculate total
     let total = 0;
@@ -46,7 +46,7 @@ router.post('/add', authenticateToken, async (req, res) => {
     }
 
     // Get product details
-    const [products] = await pool.execute(
+    const products = await query(
       'SELECT id, name, price, stock FROM products WHERE id = ?',
       [productId]
     );
@@ -62,14 +62,14 @@ router.post('/add', authenticateToken, async (req, res) => {
     }
 
     // Get existing cart
-    const [carts] = await pool.execute(
+    const carts = await query(
       'SELECT * FROM cart WHERE user_id = ?',
       [userId]
     );
 
     let cartProducts = [];
     if (carts.length > 0) {
-      cartProducts = JSON.parse(carts[0].products);
+      cartProducts = typeof carts[0].products === 'string' ? JSON.parse(carts[0].products) : (carts[0].products || []);
     }
 
     // Check if product already in cart
@@ -90,12 +90,12 @@ router.post('/add', authenticateToken, async (req, res) => {
 
     // Save cart
     if (carts.length > 0) {
-      await pool.execute(
+      await query(
         'UPDATE cart SET products = ? WHERE user_id = ?',
         [JSON.stringify(cartProducts), userId]
       );
     } else {
-      await pool.execute(
+      await query(
         'INSERT INTO cart (user_id, products) VALUES (?, ?)',
         [userId, JSON.stringify(cartProducts)]
       );
@@ -120,7 +120,7 @@ router.put('/update', authenticateToken, async (req, res) => {
     }
 
     // Get existing cart
-    const [carts] = await pool.execute(
+    const carts = await query(
       'SELECT * FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -129,7 +129,7 @@ router.put('/update', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Cart not found' });
     }
 
-    let cartProducts = JSON.parse(carts[0].products);
+    let cartProducts = typeof carts[0].products === 'string' ? JSON.parse(carts[0].products) : (carts[0].products || []);
     const itemIndex = cartProducts.findIndex(item => item.productId === productId);
 
     if (itemIndex === -1) {
@@ -145,7 +145,7 @@ router.put('/update', authenticateToken, async (req, res) => {
     }
 
     // Save cart
-    await pool.execute(
+    await query(
       'UPDATE cart SET products = ? WHERE user_id = ?',
       [JSON.stringify(cartProducts), userId]
     );
@@ -165,7 +165,7 @@ router.delete('/remove/:productId', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // Get existing cart
-    const [carts] = await pool.execute(
+    const carts = await query(
       'SELECT * FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -174,7 +174,7 @@ router.delete('/remove/:productId', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Cart not found' });
     }
 
-    let cartProducts = JSON.parse(carts[0].products);
+    let cartProducts = typeof carts[0].products === 'string' ? JSON.parse(carts[0].products) : (carts[0].products || []);
     const itemIndex = cartProducts.findIndex(item => item.productId === parseInt(productId));
 
     if (itemIndex === -1) {
@@ -185,7 +185,7 @@ router.delete('/remove/:productId', authenticateToken, async (req, res) => {
     cartProducts.splice(itemIndex, 1);
 
     // Save cart
-    await pool.execute(
+    await query(
       'UPDATE cart SET products = ? WHERE user_id = ?',
       [JSON.stringify(cartProducts), userId]
     );
@@ -203,7 +203,7 @@ router.delete('/clear', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    await pool.execute(
+    await query(
       'DELETE FROM cart WHERE user_id = ?',
       [userId]
     );

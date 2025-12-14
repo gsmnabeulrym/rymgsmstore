@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -23,7 +23,7 @@ router.post('/register', [
     const { name, email, password, phone, address } = req.body;
 
     // Check if user already exists
-    const [existingUsers] = await pool.execute(
+    const existingUsers = await query(
       'SELECT id FROM users WHERE email = ?',
       [email]
     );
@@ -36,7 +36,7 @@ router.post('/register', [
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const [result] = await pool.execute(
+    const result = await query(
       'INSERT INTO users (name, email, password, phone, address) VALUES (?, ?, ?, ?, ?)',
       [name, email, hashedPassword, phone || null, address || null]
     );
@@ -80,7 +80,7 @@ router.post('/login', [
     const { email, password } = req.body;
 
     // Find user
-    const [users] = await pool.execute(
+    const users = await query(
       'SELECT id, name, email, password, phone, address, role FROM users WHERE email = ?',
       [email]
     );
@@ -126,7 +126,7 @@ router.post('/login', [
 // Get current user profile
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const [users] = await pool.execute(
+    const users = await query(
       'SELECT id, name, email, phone, address, role FROM users WHERE id = ?',
       [req.user.id]
     );
@@ -159,7 +159,7 @@ router.put('/profile', authenticateToken, [
 
     // Check if email is being changed and if it's already taken
     if (email) {
-      const [existingUsers] = await pool.execute(
+      const existingUsers = await query(
         'SELECT id FROM users WHERE email = ? AND id != ?',
         [email, userId]
       );
@@ -196,13 +196,13 @@ router.put('/profile', authenticateToken, [
 
     updateValues.push(userId);
 
-    await pool.execute(
+    await query(
       `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
       updateValues
     );
 
     // Get updated user
-    const [users] = await pool.execute(
+    const users = await query(
       'SELECT id, name, email, phone, address, role FROM users WHERE id = ?',
       [userId]
     );

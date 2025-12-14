@@ -1,5 +1,5 @@
 const express = require('express');
-const { pool } = require('../config/database');
+const { query, isPostgres } = require('../config/database');
 const router = express.Router();
 
 // GET /api/products/search/suggestions - Get search suggestions
@@ -14,7 +14,7 @@ router.get('/products/search/suggestions', async (req, res) => {
     const searchTerm = `%${q}%`;
 
     // Search products
-    const [products] = await pool.execute(`
+    const products = await query(`
       SELECT id, name, price, brand, images 
       FROM products 
       WHERE (name LIKE ? OR description LIKE ? OR brand LIKE ?) 
@@ -32,11 +32,11 @@ router.get('/products/search/suggestions', async (req, res) => {
     // Parse images for products
     const productsWithImages = products.map(product => ({
       ...product,
-      images: product.images ? product.images.split(',').map(img => img.trim()) : []
+      images: typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || [])
     }));
 
     // Search brands
-    const [brands] = await pool.execute(`
+    const brands = await query(`
       SELECT DISTINCT brand 
       FROM products 
       WHERE brand LIKE ? 
@@ -46,7 +46,7 @@ router.get('/products/search/suggestions', async (req, res) => {
     `, [searchTerm]);
 
     // Search categories
-    const [categories] = await pool.execute(`
+    const categories = await query(`
       SELECT DISTINCT category 
       FROM products 
       WHERE category LIKE ? 
@@ -71,7 +71,7 @@ router.get('/products/search/suggestions', async (req, res) => {
 router.get('/products/filters/options', async (req, res) => {
   try {
     // Get all brands
-    const [brands] = await pool.execute(`
+    const brands = await query(`
       SELECT brand, COUNT(*) as count 
       FROM products 
       WHERE stock > 0 
@@ -80,7 +80,7 @@ router.get('/products/filters/options', async (req, res) => {
     `);
 
     // Get category counts
-    const [categoryCounts] = await pool.execute(`
+    const categoryCounts = await query(`
       SELECT category, COUNT(*) as count 
       FROM products 
       WHERE stock > 0 
@@ -88,50 +88,38 @@ router.get('/products/filters/options', async (req, res) => {
     `);
 
     // Get brand counts
-    const [brandCounts] = await pool.execute(`
+    const brandCounts = await query(`
       SELECT brand, COUNT(*) as count 
       FROM products 
       WHERE stock > 0 
       GROUP BY brand
     `);
 
-    // Get RAM options (from specs JSON)
-    const [ramOptions] = await pool.execute(`
-      SELECT DISTINCT JSON_UNQUOTE(JSON_EXTRACT(specs, '$.ram')) as ram
-      FROM products 
-      WHERE JSON_EXTRACT(specs, '$.ram') IS NOT NULL 
-      AND stock > 0
-      ORDER BY 
-        CASE 
-          WHEN JSON_UNQUOTE(JSON_EXTRACT(specs, '$.ram')) LIKE '%GB' 
-          THEN CAST(SUBSTRING_INDEX(JSON_UNQUOTE(JSON_EXTRACT(specs, '$.ram')), 'GB', 1) AS UNSIGNED)
-          ELSE 0 
-        END ASC
+    // Get RAM and storage options from specs - fetch all products and extract unique values
+    const allProducts = await query(`
+      SELECT specs FROM products WHERE stock > 0
     `);
 
-    // Get storage options (from specs JSON)
-    const [storageOptions] = await pool.execute(`
-      SELECT DISTINCT JSON_UNQUOTE(JSON_EXTRACT(specs, '$.storage')) as storage
-      FROM products 
-      WHERE JSON_EXTRACT(specs, '$.storage') IS NOT NULL 
-      AND stock > 0
-      ORDER BY 
-        CASE 
-          WHEN JSON_UNQUOTE(JSON_EXTRACT(specs, '$.storage')) LIKE '%GB' 
-          THEN CAST(SUBSTRING_INDEX(JSON_UNQUOTE(JSON_EXTRACT(specs, '$.storage')), 'GB', 1) AS UNSIGNED)
-          WHEN JSON_UNQUOTE(JSON_EXTRACT(specs, '$.storage')) LIKE '%TB' 
-          THEN CAST(SUBSTRING_INDEX(JSON_UNQUOTE(JSON_EXTRACT(specs, '$.storage')), 'TB', 1) AS UNSIGNED) * 1000
-          ELSE 0 
-        END ASC
-    `);
+    // Extract unique RAM and storage values from specs
+    const ramSet = new Set();
+    const storageSet = new Set();
+    
+    allProducts.forEach(product => {
+      const specs = typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {});
+      if (specs.ram) ramSet.add(specs.ram);
+      if (specs.storage) storageSet.add(specs.storage);
+    });
+
+    const ramOptions = Array.from(ramSet).filter(r => r && r !== 'null');
+    const storageOptions = Array.from(storageSet).filter(s => s && s !== 'null');
 
     // Format response
     const response = {
       brands: brands.map(b => b.brand),
       brandCounts: {},
       counts: {},
-      ram: ramOptions.map(r => r.ram).filter(r => r && r !== 'null'),
-      storage: storageOptions.map(s => s.storage).filter(s => s && s !== 'null')
+      ram: ramOptions,
+      storage: storageOptions
     };
 
     // Add brand counts

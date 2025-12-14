@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'rym-gsm-secret-key-2024';
@@ -30,7 +30,7 @@ router.get('/wishlist', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // Get wishlist items with product details
-    const [wishlistItems] = await pool.execute(`
+    const wishlistItems = await query(`
       SELECT w.*, p.name, p.price, p.images, p.brand, p.category, p.stock, p.description
       FROM wishlist w
       JOIN products p ON w.product_id = p.id
@@ -43,7 +43,7 @@ router.get('/wishlist', authenticateToken, async (req, res) => {
       id: item.product_id,
       name: item.name,
       price: item.price,
-      images: item.images ? item.images.split(',').map(img => img.trim()) : [],
+      images: typeof item.images === 'string' ? JSON.parse(item.images || '[]') : (item.images || []),
       brand: item.brand,
       category: item.category,
       stock: item.stock,
@@ -80,7 +80,7 @@ router.post('/wishlist/add', authenticateToken, async (req, res) => {
     }
 
     // Check if product exists
-    const [products] = await pool.execute('SELECT id FROM products WHERE id = ?', [productId]);
+    const products = await query('SELECT id FROM products WHERE id = ?', [productId]);
     if (products.length === 0) {
       return res.status(404).json({ 
         success: false, 
@@ -89,7 +89,7 @@ router.post('/wishlist/add', authenticateToken, async (req, res) => {
     }
 
     // Check if product is already in wishlist
-    const [existingItems] = await pool.execute(
+    const existingItems = await query(
       'SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?',
       [userId, productId]
     );
@@ -102,7 +102,7 @@ router.post('/wishlist/add', authenticateToken, async (req, res) => {
     }
 
     // Add to wishlist
-    await pool.execute(
+    await query(
       'INSERT INTO wishlist (user_id, product_id, created_at) VALUES (?, ?, NOW())',
       [userId, productId]
     );
@@ -128,7 +128,7 @@ router.delete('/wishlist/remove/:productId', authenticateToken, async (req, res)
     const { productId } = req.params;
 
     // Remove from wishlist
-    const [result] = await pool.execute(
+    const result = await query(
       'DELETE FROM wishlist WHERE user_id = ? AND product_id = ?',
       [userId, productId]
     );
@@ -160,7 +160,7 @@ router.delete('/wishlist/clear', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // Clear wishlist
-    await pool.execute('DELETE FROM wishlist WHERE user_id = ?', [userId]);
+    await query('DELETE FROM wishlist WHERE user_id = ?', [userId]);
 
     res.json({
       success: true,
@@ -182,7 +182,7 @@ router.get('/wishlist/check/:productId', authenticateToken, async (req, res) => 
     const userId = req.user.id;
     const { productId } = req.params;
 
-    const [items] = await pool.execute(
+    const items = await query(
       'SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?',
       [userId, productId]
     );
@@ -207,7 +207,7 @@ router.get('/wishlist/stats', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     // Get wishlist stats
-    const [stats] = await pool.execute(`
+    const stats = await query(`
       SELECT 
         COUNT(*) as totalItems,
         SUM(p.price) as totalValue,
