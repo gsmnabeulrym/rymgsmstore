@@ -162,8 +162,8 @@ router.post('/products/:productId/reviews', authenticateToken, async (req, res) 
     
     // Insert new review into database
     const result = await query(
-      'INSERT INTO reviews (product_id, user_id, rating, comment, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
-      [productId, userId, parseInt(rating), comment.trim(), 'approved']
+      'INSERT INTO reviews (product_id, user_id, rating, comment, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())',
+      [productId, userId, parseInt(rating), comment.trim()]
     );
     
     // Get the created review with user name
