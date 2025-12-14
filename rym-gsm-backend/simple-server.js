@@ -241,7 +241,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
     
     // Get user from database
-    const [rows] = await pool.execute(
+    const rows = await query(
       'SELECT * FROM users WHERE email = ?',
       [email]
     );
@@ -298,7 +298,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
     
     // Check if user already exists
-    const [existingUsers] = await pool.execute(
+    const existingUsers = await query(
       'SELECT id FROM users WHERE email = ?',
       [email]
     );
@@ -313,7 +313,7 @@ app.post('/api/auth/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insert new user
-    const [result] = await pool.execute(
+    const result = await query(
       'INSERT INTO users (name, email, password, phone, address, role) VALUES (?, ?, ?, ?, ?, ?)',
       [name, email, hashedPassword, phone || null, address || null, 'user']
     );
@@ -347,7 +347,7 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.get('/api/auth/profile', authenticateToken, async (req, res) => {
   try {
-    const [rows] = await pool.execute(
+    const rows = await query(
       'SELECT id, name, email, phone, address, role FROM users WHERE id = ?',
       [req.user.id]
     );
@@ -379,7 +379,7 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     const { name, email, phone, address } = req.body;
     
     // Check if user exists
-    const [existingUser] = await pool.execute(
+    const existingUser = await query(
       'SELECT * FROM users WHERE id = ?',
       [req.user.id]
     );
@@ -390,7 +390,7 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
 
     // Check if email is being changed and if it's already taken
     if (email && email !== existingUser[0].email) {
-      const [emailCheck] = await pool.execute(
+      const emailCheck = await query(
         'SELECT id FROM users WHERE email = ? AND id != ?',
         [email, req.user.id]
       );
@@ -416,13 +416,13 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     params.push(req.user.id);
     
     // Update user in database
-    await pool.execute(
+    await query(
       `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
       params
     );
 
     // Get updated user
-    const [updatedUser] = await pool.execute(
+    const updatedUser = await query(
       'SELECT id, name, email, phone, address, role FROM users WHERE id = ?',
       [req.user.id]
     );
@@ -444,66 +444,66 @@ app.get('/api/products', async (req, res) => {
     
     console.log('📦 GET /api/products - Query params:', req.query);
     
-    let query = 'SELECT * FROM products WHERE 1=1';
+    let sqlQuery = 'SELECT * FROM products WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as total FROM products WHERE 1=1';
     const params = [];
     
     // Apply filters
     if (search) {
-      query += ' AND (name LIKE ? OR description LIKE ?)';
+      sqlQuery += ' AND (name LIKE ? OR description LIKE ?)';
       countQuery += ' AND (name LIKE ? OR description LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
     }
     
     if (brand) {
-      query += ' AND brand = ?';
+      sqlQuery += ' AND brand = ?';
       countQuery += ' AND brand = ?';
       params.push(brand);
     }
     
     if (category) {
-      query += ' AND category = ?';
+      sqlQuery += ' AND category = ?';
       countQuery += ' AND category = ?';
       params.push(category);
     }
     
     if (minPrice) {
-      query += ' AND price >= ?';
+      sqlQuery += ' AND price >= ?';
       countQuery += ' AND price >= ?';
       params.push(parseFloat(minPrice));
     }
     
     if (maxPrice) {
-      query += ' AND price <= ?';
+      sqlQuery += ' AND price <= ?';
       countQuery += ' AND price <= ?';
       params.push(parseFloat(maxPrice));
     }
     
     if (ram) {
-      query += ' AND JSON_EXTRACT(specs, "$.ram") = ?';
-      countQuery += ' AND JSON_EXTRACT(specs, "$.ram") = ?';
+      sqlQuery += " AND specs->>'ram' = ?";
+      countQuery += " AND specs->>'ram' = ?";
       params.push(ram);
     }
     
     if (storage) {
-      query += ' AND JSON_EXTRACT(specs, "$.storage") = ?';
-      countQuery += ' AND JSON_EXTRACT(specs, "$.storage") = ?';
+      sqlQuery += " AND specs->>'storage' = ?";
+      countQuery += " AND specs->>'storage' = ?";
       params.push(storage);
     }
     
     // Get total count
-    const [countResult] = await pool.execute(countQuery, params);
+    const countResult = await query(countQuery, params);
     const totalProducts = countResult[0].total;
     
     // Add pagination
     const offset = (page - 1) * limit;
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    sqlQuery += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
     
     // Get products
-    console.log('🔍 Executing query:', query);
+    console.log('🔍 Executing query:', sqlQuery);
     console.log('📝 With params:', params);
-    const [rows] = await pool.execute(query, params);
+    const rows = await query(sqlQuery, params);
     
     console.log(`✅ Found ${rows.length} products, Total: ${totalProducts}`);
     
@@ -531,7 +531,7 @@ app.get('/api/products', async (req, res) => {
 
 app.get('/api/products/brands/list', async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT DISTINCT brand FROM products ORDER BY brand');
+    const rows = await query('SELECT DISTINCT brand FROM products ORDER BY brand');
     const brands = rows.map(row => row.brand);
     res.json({ brands });
   } catch (error) {
@@ -543,7 +543,7 @@ app.get('/api/products/brands/list', async (req, res) => {
 app.get('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const [rows] = await pool.execute('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
+    const rows = await query('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
     
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Product not found' });
@@ -578,7 +578,7 @@ app.post('/api/products', async (req, res) => {
       return res.status(400).json({ message: 'Name, brand, price, and category are required' });
     }
 
-    const [result] = await pool.execute(
+    const result = await query(
       'INSERT INTO products (name, brand, price, stock, category, images, specs, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         name,
@@ -633,7 +633,7 @@ app.put('/api/products/:id', async (req, res) => {
     const { name, brand, price, stock, category, images, specs, description } = req.body;
     
     // Check if product exists
-    const [existing] = await pool.execute('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
+    const existing = await query('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
     if (existing.length === 0) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -657,13 +657,13 @@ app.put('/api/products/:id', async (req, res) => {
     
     params.push(parseInt(id));
     
-    await pool.execute(
+    await query(
       `UPDATE products SET ${updates.join(', ')} WHERE id = ?`,
       params
     );
 
     // Get updated product
-    const [updated] = await pool.execute('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
+    const updated = await query('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
     const product = {
       ...updated[0],
       images: typeof updated[0].images === 'string' ? JSON.parse(updated[0].images || '[]') : (updated[0].images || []),
@@ -685,7 +685,7 @@ app.delete('/api/products/:id', async (req, res) => {
     const { id } = req.params;
     
     // Get product before deletion
-    const [existing] = await pool.execute('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
+    const existing = await query('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
     if (existing.length === 0) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -697,7 +697,7 @@ app.delete('/api/products/:id', async (req, res) => {
     };
 
     // Delete product
-    await pool.execute('DELETE FROM products WHERE id = ?', [parseInt(id)]);
+    await query('DELETE FROM products WHERE id = ?', [parseInt(id)]);
 
     res.json({
       message: 'Product deleted successfully',
@@ -714,7 +714,7 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
-    const [rows] = await pool.execute(
+    const rows = await query(
       'SELECT products FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -728,7 +728,7 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
       for (let i = 0; i < products.length; i++) {
         if (!products[i].image && products[i].productId) {
           try {
-            const [productRows] = await pool.execute(
+            const productRows = await query(
               'SELECT images FROM products WHERE id = ?',
               [products[i].productId]
             );
@@ -763,7 +763,7 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
     }
 
     // Get product from database
-    const [productRows] = await pool.execute(
+    const productRows = await query(
       'SELECT * FROM products WHERE id = ?',
       [parseInt(productId)]
     );
@@ -778,7 +778,7 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
     };
 
     // Get existing cart
-    const [cartRows] = await pool.execute(
+    const cartRows = await query(
       'SELECT products FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -807,12 +807,12 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
 
     // Save cart to database
     if (cartRows.length > 0) {
-      await pool.execute(
+      await query(
         'UPDATE cart SET products = ? WHERE user_id = ?',
         [JSON.stringify(cartProducts), userId]
       );
     } else {
-      await pool.execute(
+      await query(
         'INSERT INTO cart (user_id, products) VALUES (?, ?)',
         [userId, JSON.stringify(cartProducts)]
       );
@@ -836,7 +836,7 @@ app.put('/api/cart/update', authenticateToken, async (req, res) => {
     }
 
     // Get existing cart
-    const [cartRows] = await pool.execute(
+    const cartRows = await query(
       'SELECT products FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -861,7 +861,7 @@ app.put('/api/cart/update', authenticateToken, async (req, res) => {
     }
 
     // Update cart in database
-    await pool.execute(
+    await query(
       'UPDATE cart SET products = ? WHERE user_id = ?',
       [JSON.stringify(cartProducts), userId]
     );
@@ -880,7 +880,7 @@ app.delete('/api/cart/remove/:productId', authenticateToken, async (req, res) =>
     const userId = req.user.id;
 
     // Get existing cart
-    const [cartRows] = await pool.execute(
+    const cartRows = await query(
       'SELECT products FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -900,7 +900,7 @@ app.delete('/api/cart/remove/:productId', authenticateToken, async (req, res) =>
     cartProducts.splice(itemIndex, 1);
 
     // Update cart in database
-    await pool.execute(
+    await query(
       'UPDATE cart SET products = ? WHERE user_id = ?',
       [JSON.stringify(cartProducts), userId]
     );
@@ -918,7 +918,7 @@ app.delete('/api/cart/clear', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     
     // Clear cart in database
-    await pool.execute(
+    await query(
       'DELETE FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -936,7 +936,7 @@ app.get('/api/orders/my-orders', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
-    const [rows] = await pool.execute(
+    const rows = await query(
       'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
       [userId]
     );
@@ -949,7 +949,7 @@ app.get('/api/orders/my-orders', authenticateToken, async (req, res) => {
       for (let i = 0; i < products.length; i++) {
         if (!products[i].image && products[i].productId) {
           try {
-            const [productRows] = await pool.execute(
+            const productRows = await query(
               'SELECT images FROM products WHERE id = ?',
               [products[i].productId]
             );
@@ -987,35 +987,35 @@ app.get('/api/orders/admin/all', async (req, res) => {
   try {
     const { search, status, page = 1, limit = 10 } = req.query;
     
-    let query = 'SELECT * FROM orders WHERE 1=1';
+    let sqlQuery = 'SELECT * FROM orders WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as total FROM orders WHERE 1=1';
     const params = [];
     
     // Apply status filter
     if (status) {
-      query += ' AND status = ?';
+      sqlQuery += ' AND status = ?';
       countQuery += ' AND status = ?';
       params.push(status);
     }
     
     // Apply search filter (search in order ID)
     if (search) {
-      query += ' AND id LIKE ?';
-      countQuery += ' AND id LIKE ?';
+      sqlQuery += ' AND CAST(id AS TEXT) LIKE ?';
+      countQuery += ' AND CAST(id AS TEXT) LIKE ?';
       params.push(`%${search}%`);
     }
     
     // Get total count
-    const [countResult] = await pool.execute(countQuery, params);
+    const countResult = await query(countQuery, params);
     const totalOrders = countResult[0].total;
     
     // Add pagination and ordering
     const offset = (page - 1) * limit;
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    sqlQuery += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
     
     // Get orders
-    const [rows] = await pool.execute(query, params);
+    const rows = await query(sqlQuery, params);
     
     const orders = rows.map(order => ({
       ...order,
@@ -1083,7 +1083,7 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
 
     // Create order in database (without payment_method since column doesn't exist in PostgreSQL)
     console.log('Inserting order into database...');
-    const [result] = await pool.execute(
+    const result = await query(
       'INSERT INTO orders (user_id, products, total, status, shipping_address) VALUES (?, ?, ?, ?, ?)',
       [userId, JSON.stringify(orderItems), orderTotal, orderStatus, shippingAddressStr]
     );
@@ -1103,7 +1103,7 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
 
     // Clear user's cart after successful order
     console.log('Clearing user cart...');
-    await pool.execute(
+    await query(
       'DELETE FROM cart WHERE user_id = ?',
       [userId]
     );
@@ -1137,7 +1137,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
     }
 
     // Check if order exists and update
-    const [result] = await pool.execute(
+    const result = await query(
       'UPDATE orders SET status = ? WHERE id = ?',
       [status, orderId]
     );
@@ -1151,7 +1151,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
     }
 
     // Get updated order
-    const [rows] = await pool.execute(
+    const rows = await query(
       'SELECT * FROM orders WHERE id = ?',
       [orderId]
     );
@@ -1182,16 +1182,16 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
     const isAdmin = req.user.role === 'admin';
     
     // Build query based on user role
-    let query = 'SELECT * FROM orders WHERE id = ?';
+    let sqlQuery = 'SELECT * FROM orders WHERE id = ?';
     let params = [orderId];
     
     // Non-admin users can only see their own orders
     if (!isAdmin) {
-      query += ' AND user_id = ?';
+      sqlQuery += ' AND user_id = ?';
       params.push(userId);
     }
     
-    const [rows] = await pool.execute(query, params);
+    const rows = await query(sqlQuery, params);
     
     if (rows.length === 0) {
       return res.status(404).json({
@@ -1206,12 +1206,12 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
     for (let i = 0; i < products.length; i++) {
       if (!products[i].image && products[i].productId) {
         try {
-          const [productRows] = await pool.execute(
+          const productRows = await query(
             'SELECT images FROM products WHERE id = ?',
             [products[i].productId]
           );
           if (productRows.length > 0 && productRows[0].images) {
-            const images = JSON.parse(productRows[0].images || '[]');
+            const images = typeof productRows[0].images === 'string' ? JSON.parse(productRows[0].images || '[]') : (productRows[0].images || []);
             products[i].image = images[0] || '';
           }
         } catch (err) {
@@ -1244,23 +1244,23 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
 app.get('/api/admin/dashboard/stats', async (req, res) => {
   try {
     // Get total users count
-    const [usersCount] = await pool.execute('SELECT COUNT(*) as total FROM users');
+    const usersCount = await query('SELECT COUNT(*) as total FROM users');
     
     // Get total products count
-    const [productsCount] = await pool.execute('SELECT COUNT(*) as total FROM products');
+    const productsCount = await query('SELECT COUNT(*) as total FROM products');
     
     // Get total orders count
-    const [ordersCount] = await pool.execute('SELECT COUNT(*) as total FROM orders');
+    const ordersCount = await query('SELECT COUNT(*) as total FROM orders');
     
     // Get orders by status
-    const [ordersByStatus] = await pool.execute(`
+    const ordersByStatus = await query(`
       SELECT status, COUNT(*) as count 
       FROM orders 
       GROUP BY status
     `);
     
     // Get recent orders
-    const [recentOrders] = await pool.execute(`
+    const recentOrders = await query(`
       SELECT o.*, u.name as user_name 
       FROM orders o 
       JOIN users u ON o.user_id = u.id 
@@ -1269,18 +1269,18 @@ app.get('/api/admin/dashboard/stats', async (req, res) => {
     `);
     
     // Calculate total revenue
-    const [revenue] = await pool.execute(`
+    const revenue = await query(`
       SELECT SUM(total) as total_revenue 
       FROM orders 
       WHERE status != 'cancelled'
     `);
 
     const stats = {
-      totalUsers: usersCount[0].total,
-      totalProducts: productsCount[0].total,
-      totalOrders: ordersCount[0].total,
-      totalRevenue: revenue[0].total_revenue || 0,
-      ordersByStatus: ordersByStatus.reduce((acc, item) => {
+      totalUsers: usersCount[0]?.total || 0,
+      totalProducts: productsCount[0]?.total || 0,
+      totalOrders: ordersCount[0]?.total || 0,
+      totalRevenue: revenue[0]?.total_revenue || 0,
+      ordersByStatus: (ordersByStatus || []).reduce((acc, item) => {
         acc[item.status] = item.count;
         return acc;
       }, {}),
@@ -1308,35 +1308,35 @@ app.get('/api/users', async (req, res) => {
   try {
     const { page = 1, limit = 10, search, role } = req.query;
     
-    let query = 'SELECT id, name, email, phone, address, role, created_at FROM users WHERE 1=1';
+    let sqlQuery = 'SELECT id, name, email, phone, address, role, created_at FROM users WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as total FROM users WHERE 1=1';
     const params = [];
     
     // Apply search filter
     if (search) {
-      query += ' AND (name LIKE ? OR email LIKE ?)';
+      sqlQuery += ' AND (name LIKE ? OR email LIKE ?)';
       countQuery += ' AND (name LIKE ? OR email LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
     }
     
     // Apply role filter
     if (role) {
-      query += ' AND role = ?';
+      sqlQuery += ' AND role = ?';
       countQuery += ' AND role = ?';
       params.push(role);
     }
     
     // Get total count
-    const [countResult] = await pool.execute(countQuery, params);
-    const totalUsers = countResult[0].total;
+    const countResult = await query(countQuery, params);
+    const totalUsers = countResult[0]?.total || 0;
     
     // Add pagination
     const offset = (page - 1) * limit;
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    sqlQuery += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
     
     // Get users
-    const [users] = await pool.execute(query, params);
+    const users = await query(sqlQuery, params);
     
     res.json({
       success: true,
@@ -1370,7 +1370,7 @@ app.post('/api/users', async (req, res) => {
     }
     
     // Check if user already exists
-    const [existingUsers] = await pool.execute(
+    const existingUsers = await query(
       'SELECT id FROM users WHERE email = ?',
       [email]
     );
@@ -1386,7 +1386,7 @@ app.post('/api/users', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insert new user
-    const [result] = await pool.execute(
+    const result = await query(
       'INSERT INTO users (name, email, password, phone, address, role) VALUES (?, ?, ?, ?, ?, ?)',
       [name, email, hashedPassword, phone || null, address || null, role]
     );
@@ -1422,7 +1422,7 @@ app.put('/api/users/:id', async (req, res) => {
     const { name, email, phone, address, role } = req.body;
     
     // Check if user exists
-    const [existingUser] = await pool.execute(
+    const existingUser = await query(
       'SELECT * FROM users WHERE id = ?',
       [parseInt(id)]
     );
@@ -1436,7 +1436,7 @@ app.put('/api/users/:id', async (req, res) => {
 
     // Check if email is being changed and if it's already taken
     if (email && email !== existingUser[0].email) {
-      const [emailCheck] = await pool.execute(
+      const emailCheck = await query(
         'SELECT id FROM users WHERE email = ? AND id != ?',
         [email, parseInt(id)]
       );
@@ -1469,13 +1469,13 @@ app.put('/api/users/:id', async (req, res) => {
     params.push(parseInt(id));
     
     // Update user in database
-    await pool.execute(
+    await query(
       `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
       params
     );
 
     // Get updated user
-    const [updatedUser] = await pool.execute(
+    const updatedUser = await query(
       'SELECT id, name, email, phone, address, role, created_at FROM users WHERE id = ?',
       [parseInt(id)]
     );
@@ -1500,7 +1500,7 @@ app.delete('/api/users/:id', async (req, res) => {
     const { id } = req.params;
     
     // Check if user exists
-    const [existingUser] = await pool.execute(
+    const existingUser = await query(
       'SELECT * FROM users WHERE id = ?',
       [parseInt(id)]
     );
@@ -1514,11 +1514,11 @@ app.delete('/api/users/:id', async (req, res) => {
 
     // Don't allow deleting the last admin
     if (existingUser[0].role === 'admin') {
-      const [adminCount] = await pool.execute(
-        'SELECT COUNT(*) as count FROM users WHERE role = "admin"'
+      const adminCount = await query(
+        "SELECT COUNT(*) as count FROM users WHERE role = 'admin'"
       );
       
-      if (adminCount[0].count <= 1) {
+      if (adminCount[0]?.count <= 1) {
         return res.status(400).json({
           success: false,
           message: 'Cannot delete the last admin user'
@@ -1527,7 +1527,7 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 
     // Delete user (this will cascade delete orders and cart due to foreign key constraints)
-    await pool.execute('DELETE FROM users WHERE id = ?', [parseInt(id)]);
+    await query('DELETE FROM users WHERE id = ?', [parseInt(id)]);
 
     res.json({
       success: true,
@@ -1553,7 +1553,7 @@ app.get('/api/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const [users] = await pool.execute(
+    const users = await query(
       'SELECT id, name, email, phone, address, role, created_at FROM users WHERE id = ?',
       [parseInt(id)]
     );
