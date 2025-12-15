@@ -31,13 +31,13 @@ export const NotificationProvider = ({ children }) => {
     if (isAuthenticated) {
       fetchNotifications();
       fetchPreferences();
-      // Set up polling for new notifications every 2 seconds for immediate updates
-      const interval = setInterval(fetchNotifications, 2000);
+      // Set up polling for new notifications every 30 seconds (reduced from 2s to prevent excessive refreshing)
+      const interval = setInterval(() => fetchNotifications(true), 30000);
       
       // Also refresh when window gains focus
       const handleFocus = () => {
         console.log('🔄 Window focused - refreshing notifications');
-        fetchNotifications();
+        fetchNotifications(true);
       };
       
       window.addEventListener('focus', handleFocus);
@@ -53,26 +53,30 @@ export const NotificationProvider = ({ children }) => {
   }, [isAuthenticated]);
 
   // Fetch notifications from server
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (isBackground = false) => {
     if (!isAuthenticated) return;
     
-    setIsLoading(true);
+    if (!isBackground) setIsLoading(true);
     try {
       // Add cache-busting parameter to force fresh data
       const response = await api.get(`/notifications?_t=${Date.now()}`);
       const notificationData = response.data.notifications || [];
-      console.log('🔔 Fetched notifications:', notificationData.length, 'total');
+      // Only log on initial load to reduce console noise
+      if (!isBackground) console.log('🔔 Fetched notifications:', notificationData.length, 'total');
       setNotifications(notificationData);
       const unreadCount = notificationData.filter(n => !n.read_status).length;
       setUnreadCount(unreadCount);
-      console.log('📊 Unread count:', unreadCount);
+      // Only log on initial load
+      if (!isBackground) console.log('📊 Unread count:', unreadCount);
     } catch (error) {
       console.error('❌ Error fetching notifications:', error);
       // Set empty state for errors
-      setNotifications([]);
-      setUnreadCount(0);
+      if (!isBackground) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
     } finally {
-      setIsLoading(false);
+      if (!isBackground) setIsLoading(false);
     }
   };
 
