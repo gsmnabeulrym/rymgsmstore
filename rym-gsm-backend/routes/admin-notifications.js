@@ -254,12 +254,23 @@ router.post('/', authenticateAdmin, async (req, res) => {
         }
         
         // Create enhanced notification data
+        // Handle images - could be string or array
+        let productImages = product.images;
+        if (typeof productImages === 'string') {
+          try {
+            productImages = JSON.parse(productImages || '[]');
+          } catch (e) {
+            productImages = [];
+          }
+        }
+        const productImage = Array.isArray(productImages) && productImages.length > 0 ? productImages[0] : null;
+        
         const enhancedData = {
           ...data,
           productId: product.id,
           productName: product.name,
           productBrand: product.brand,
-          productImage: JSON.parse(product.images || '[]')[0] || null,
+          productImage: productImage,
           originalPrice,
           salePrice: newPrice,
           savings,
