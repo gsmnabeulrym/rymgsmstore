@@ -25,6 +25,9 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 const JWT_SECRET = process.env.JWT_SECRET || 'rym-gsm-secret-key-2024';
 
+const CANONICAL_SITE_URL = process.env.SITE_URL || null;
+const CANONICAL_HOST = process.env.CANONICAL_HOST || null;
+
 // Get database pool from config
 const pool = getPool();
 
@@ -221,6 +224,14 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+app.use((req, res, next) => {
+  if (!CANONICAL_HOST) return next();
+  const host = req.headers.host;
+  if (!host) return next();
+  if (host.toLowerCase() === CANONICAL_HOST.toLowerCase()) return next();
+  return res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -228,6 +239,67 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: 'development'
   });
+});
+
+app.get('/robots.txt', (req, res) => {
+  const siteUrl = CANONICAL_SITE_URL || `https://${req.get('host')}`;
+  res.type('text/plain').send(
+    [
+      'User-agent: *',
+      'Allow: /',
+      '',
+      'Disallow: /admin',
+      'Disallow: /admin/*',
+      'Disallow: /checkout',
+      'Disallow: /cart',
+      '',
+      `Sitemap: ${siteUrl.replace(/\/$/, '')}/sitemap.xml`,
+      'Crawl-delay: 1',
+      ''
+    ].join('\n')
+  );
+});
+
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const siteUrl = (CANONICAL_SITE_URL || `https://${req.get('host')}`).replace(/\/$/, '');
+    const now = new Date().toISOString();
+
+    const baseUrls = [
+      { loc: `${siteUrl}/`, priority: '1.0', changefreq: 'daily' },
+      { loc: `${siteUrl}/products`, priority: '0.9', changefreq: 'daily' },
+      { loc: `${siteUrl}/contact`, priority: '0.6', changefreq: 'monthly' }
+    ];
+
+    const products = await query('SELECT id, updated_at, created_at FROM products ORDER BY id ASC');
+    const productUrls = products.map(p => {
+      const lastMod = (p.updated_at || p.created_at || now);
+      const lastmodIso = (lastMod instanceof Date) ? lastMod.toISOString() : new Date(lastMod).toISOString();
+      return { loc: `${siteUrl}/products/${p.id}`, lastmod: lastmodIso, priority: '0.8', changefreq: 'weekly' };
+    });
+
+    const urls = [
+      ...baseUrls.map(u => ({ ...u, lastmod: now })),
+      ...productUrls
+    ];
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+      urls.map(u => (
+        `  <url>\n` +
+        `    <loc>${u.loc}</loc>\n` +
+        `    <lastmod>${u.lastmod}</lastmod>\n` +
+        `    <changefreq>${u.changefreq}</changefreq>\n` +
+        `    <priority>${u.priority}</priority>\n` +
+        `  </url>`
+      )).join('\n') +
+      `\n</urlset>\n`;
+
+    res.type('application/xml').send(xml);
+  } catch (error) {
+    console.error('Error generating sitemap:', error);
+    res.status(500).type('text/plain').send('Error generating sitemap');
+  }
 });
 
 // Auth routes
@@ -1631,9 +1703,107 @@ console.log('🔗 Notification routes mounted at: /api/notifications');
 
 // Handle React routing - serve index.html for all non-API routes
 if (fs.existsSync(frontendBuildPath)) {
-  app.get('*', (req, res) => {
-    console.log('🏠 Serving index.html for:', req.path);
-    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  const indexHtmlPath = path.join(frontendBuildPath, 'index.html');
+  let indexHtmlCache = null;
+
+  const escapeHtml = (str) => {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+
+  const replaceMetaTag = (html, matcher, replacement) => {
+    if (matcher.test(html)) return html.replace(matcher, replacement);
+    return html.replace(/<head>/i, `<head>\n    ${replacement}`);
+  };
+
+  app.get('*', async (req, res) => {
+    try {
+      console.log('🏠 Serving index.html for:', req.path);
+      if (!indexHtmlCache) {
+        indexHtmlCache = fs.readFileSync(indexHtmlPath, 'utf8');
+      }
+
+      const siteUrl = (CANONICAL_SITE_URL || `https://${req.get('host')}`).replace(/\/$/, '');
+      const productMatch = req.path.match(/^\/products\/(\d+)$/);
+      const isProductsRoute = req.path === '/products';
+
+      let meta = {
+        title: 'RYM GSM Nabeul - Téléphones, Smartphones & Accessoires en Tunisie | Vente Mobile',
+        description: 'RYM GSM Nabeul - Votre boutique spécialisée en téléphones et smartphones en Tunisie. Samsung, iPhone, Xiaomi, OPPO. Prix compétitifs, livraison rapide, garantie officielle. Achetez votre téléphone maintenant!',
+        canonical: `${siteUrl}${isProductsRoute ? '/products' : (req.path === '/' ? '/' : req.path)}`
+      };
+
+      let jsonLd = null;
+
+      if (productMatch) {
+        const productId = parseInt(productMatch[1], 10);
+        const rows = await query('SELECT id, name, brand, price, stock, description, images FROM products WHERE id = ?', [productId]);
+        if (rows && rows.length > 0) {
+          const product = rows[0];
+          const productName = `${product.brand || ''} ${product.name || ''}`.trim();
+          const productDesc = product.description || `${productName} disponible à Nabeul, Tunisie. Prix compétitif, livraison rapide et garantie.`;
+          const images = typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []);
+          const imageUrl = images && images.length > 0 ? images[0] : `${siteUrl}/images/phones/rymgsmlogo.png`;
+
+          meta = {
+            title: `${productName} Prix Tunisie | RYM GSM Nabeul`,
+            description: productDesc,
+            canonical: `${siteUrl}/products/${product.id}`
+          };
+
+          jsonLd = {
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": productName,
+            "image": [imageUrl],
+            "description": productDesc,
+            "brand": { "@type": "Brand", "name": product.brand || 'RYM GSM' },
+            "offers": {
+              "@type": "Offer",
+              "url": meta.canonical,
+              "priceCurrency": "TND",
+              "price": String(product.price),
+              "availability": (product.stock > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+            }
+          };
+        }
+      }
+
+      let html = indexHtmlCache;
+      const safeTitle = escapeHtml(meta.title);
+      const safeDesc = escapeHtml(meta.description);
+      const safeCanonical = escapeHtml(meta.canonical);
+
+      html = html.replace(/<title>[^<]*<\/title>/i, `<title>${safeTitle}</title>`);
+      html = replaceMetaTag(html, /<meta\s+name="title"\s+content="[^"]*"\s*\/?>/i, `<meta name="title" content="${safeTitle}" />`);
+      html = replaceMetaTag(html, /<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i, `<meta name="description" content="${safeDesc}" />`);
+      html = replaceMetaTag(html, /<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i, `<link rel="canonical" href="${safeCanonical}" />`);
+
+      html = replaceMetaTag(html, /<meta\s+property="og:url"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:url" content="${safeCanonical}" />`);
+      html = replaceMetaTag(html, /<meta\s+property="og:title"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:title" content="${safeTitle}" />`);
+      html = replaceMetaTag(html, /<meta\s+property="og:description"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:description" content="${safeDesc}" />`);
+
+      html = replaceMetaTag(html, /<meta\s+property="twitter:url"\s+content="[^"]*"\s*\/?>/i, `<meta property="twitter:url" content="${safeCanonical}" />`);
+      html = replaceMetaTag(html, /<meta\s+property="twitter:title"\s+content="[^"]*"\s*\/?>/i, `<meta property="twitter:title" content="${safeTitle}" />`);
+      html = replaceMetaTag(html, /<meta\s+property="twitter:description"\s+content="[^"]*"\s*\/?>/i, `<meta property="twitter:description" content="${safeDesc}" />`);
+
+      if (jsonLd) {
+        const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`;
+        if (!/application\/ld\+json/.test(html)) {
+          html = html.replace(/<\/head>/i, `  ${jsonLdScript}\n  </head>`);
+        }
+      }
+
+      res.type('text/html').send(html);
+    } catch (error) {
+      console.error('Error serving SEO index.html:', error);
+      res.sendFile(indexHtmlPath);
+    }
   });
 } else {
   // 404 handler for API-only mode
