@@ -272,23 +272,13 @@ router.post('/', authenticateAdmin, async (req, res) => {
         // Create custom promotion message
         const promotionMessage = `${message}\n\n🏷️ ${product.brand} ${product.name}\n💰 ${originalPrice} Dt → ${newPrice} Dt\n💸 Save ${savings} Dt (${discountPercent}% off!)`;
         
-        // First, get the first available user ID (since user_id = 1 doesn't exist)
-        const usersPromo = await query('SELECT id FROM users ORDER BY id LIMIT 1');
-        const userId = usersPromo.length > 0 ? usersPromo[0].id : null;
-        
-        if (!userId) {
-          return res.status(500).json({ error: 'No users found in database' });
-        }
-        
-        console.log(`🔍 Using user_id ${userId} for "all users" notification`);
-        
-        // Create one notification for all users (using first available user_id for "all users")
+        // Create notifications for ALL users efficiently
         await query(
-          'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-          [userId, 'promotion', `🎉 ${title}`, promotionMessage, JSON.stringify(enhancedData)]
+          'INSERT INTO notifications (user_id, type, title, message, data, created_at) SELECT id, ?, ?, ?, ?, NOW() FROM users',
+          ['promotion', `🎉 ${title}`, promotionMessage, JSON.stringify(enhancedData)]
         );
         
-        console.log(`✅ Created single promotion notification for all users`);
+        console.log(`✅ Created promotion notifications for all users`);
         
         console.log('✅ Product promotion created successfully');
         
@@ -299,60 +289,30 @@ router.post('/', authenticateAdmin, async (req, res) => {
         return; // Exit here to prevent duplicate notification creation
         
       } else {
-        // Get the first available user ID for "all users" notifications
-        const usersGeneral = await query('SELECT id FROM users ORDER BY id LIMIT 1');
-        const userId = usersGeneral.length > 0 ? usersGeneral[0].id : null;
-        
-        if (!userId) {
-          return res.status(500).json({ error: 'No users found in database' });
-        }
-        
-        console.log(`🔍 Using user_id ${userId} for "all users" notification`);
-        
-        // Regular promotion without specific product - create one notification for all users
+        // Regular promotion without specific product - create for all users
         await query(
-          'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-          [userId, 'promotion', `🎉 ${title}`, message, JSON.stringify(data)]
+          'INSERT INTO notifications (user_id, type, title, message, data, created_at) SELECT id, ?, ?, ?, ?, NOW() FROM users',
+          ['promotion', `🎉 ${title}`, message, JSON.stringify(data)]
         );
         
-        console.log(`✅ Created single general promotion notification for all users`);
+        console.log(`✅ Created general promotion notifications for all users`);
       }
     } else if (type === 'system') {
-      // Get the first available user ID for "all users" notifications
-      const usersSystem = await query('SELECT id FROM users ORDER BY id LIMIT 1');
-      const userId = usersSystem.length > 0 ? usersSystem[0].id : null;
-      
-      if (!userId) {
-        return res.status(500).json({ error: 'No users found in database' });
-      }
-      
-      console.log(`🔍 Using user_id ${userId} for "all users" notification`);
-      
-      // Create one system notification for all users
+      // Create system notification for all users
       await query(
-        'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-        [userId, 'system', `📢 ${title}`, message, JSON.stringify(data)]
+        'INSERT INTO notifications (user_id, type, title, message, data, created_at) SELECT id, ?, ?, ?, ?, NOW() FROM users',
+        ['system', `📢 ${title}`, message, JSON.stringify(data)]
       );
       
-      console.log(`✅ Created single system notification for all users`);
+      console.log(`✅ Created system notifications for all users`);
     } else {
-      // Get the first available user ID for "all users" notifications
-      const usersOther = await query('SELECT id FROM users ORDER BY id LIMIT 1');
-      const userId = usersOther.length > 0 ? usersOther[0].id : null;
-      
-      if (!userId) {
-        return res.status(500).json({ error: 'No users found in database' });
-      }
-      
-      console.log(`🔍 Using user_id ${userId} for "all users" notification`);
-      
-      // Create one notification for all users (for other notification types)
+      // Create notification for all users (for other notification types)
       await query(
-        'INSERT INTO notifications (user_id, type, title, message, data, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-        [userId, type, title, message, JSON.stringify(data)]
+        'INSERT INTO notifications (user_id, type, title, message, data, created_at) SELECT id, ?, ?, ?, ?, NOW() FROM users',
+        [type, title, message, JSON.stringify(data)]
       );
       
-      console.log(`✅ Created single ${type} notification for all users`);
+      console.log(`✅ Created ${type} notifications for all users`);
     }
     
     res.status(201).json({
