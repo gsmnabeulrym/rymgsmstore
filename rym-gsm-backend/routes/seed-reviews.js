@@ -79,28 +79,34 @@ router.post('/', async (req, res) => {
     console.log(`👥 Found ${users.length} existing users`);
 
     // Create fake reviewer users if we don't have enough
-    const minUsers = 15;
+    const minUsers = 20;
     if (users.length < minUsers) {
       console.log(`📝 Creating ${minUsers - users.length} fake reviewer users...`);
       
-      for (let i = users.length; i < minUsers; i++) {
+      for (let i = 0; i < minUsers; i++) {
         const name = reviewerNames[i % reviewerNames.length];
-        const email = `reviewer${Date.now()}_${i}@rymgsm.com`;
+        const email = `reviewer_${i}_${Date.now()}@rymgsm.com`;
         const password = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
         
         try {
-          await query(
+          const result = await query(
             'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
             [name, email, password, 'user']
           );
+          console.log(`✅ Created user: ${name} (ID: ${result.insertId})`);
         } catch (err) {
           console.log(`⚠️ Could not create user ${name}: ${err.message}`);
         }
       }
       
-      // Refresh users list
-      users = await query('SELECT id, name FROM users WHERE role = ?', ['user']);
+      // Refresh users list - get ALL users
+      users = await query('SELECT id, name FROM users');
       console.log(`👥 Now have ${users.length} users for reviews`);
+    }
+    
+    // If still no users, return error
+    if (users.length === 0) {
+      return res.status(400).json({ message: 'No users available to create reviews. Please create users first.' });
     }
 
     // Check existing reviews
