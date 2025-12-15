@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
-import { Menu, X, ShoppingCart, User, Search, Phone, Laptop, Watch, Headphones, Heart, Shield } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, Search, Phone, Laptop, Watch, Headphones, Heart, Shield, Smartphone } from 'lucide-react';
 import Logo from './Logo';
 import EnhancedSearchBar from './EnhancedSearchBar';
 import NotificationBell from './NotificationBell';
@@ -181,7 +181,7 @@ const Navbar = () => {
               className="flex items-center px-4 py-3.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md"
               onClick={() => setIsMenuOpen(false)}
             >
-              <Phone className="h-5 w-5 mr-3 text-primary-500" />
+              <Smartphone className="h-5 w-5 mr-3 text-primary-500" />
               Produits
             </Link>
             <Link
