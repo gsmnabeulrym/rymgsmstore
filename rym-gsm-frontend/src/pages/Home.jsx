@@ -187,10 +187,10 @@ const Home = () => {
 
               {/* Title */}
               <div className="space-y-4">
-                <h1 className="text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100 min-h-[1.2em] md:min-h-[1.2em] flex items-end">
+                <h1 className="text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100 min-h-[2.5em] flex items-center">
                   {heroSlides[currentSlide].title}
                 </h1>
-                <p className="text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200 min-h-[1.5em] flex items-center">
+                <p className="text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200 min-h-[3em] flex items-start">
                   {heroSlides[currentSlide].subtitle}
                 </p>
               </div>
@@ -216,7 +216,7 @@ const Home = () => {
               </div>
 
               {/* Features - Dynamic per phone */}
-              <div className="grid grid-cols-2 gap-4 animate-slide-in-left delay-500">
+              <div className="grid grid-cols-2 gap-4 animate-slide-in-left delay-500 min-h-[100px]">
                 {heroSlides[currentSlide].specs.map((spec, i) => {
                   const icons = {
                     wifi: <Wifi className="h-5 w-5" />,
