@@ -13,6 +13,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
 import ScrollToTop from './components/ScrollToTop';
+import SocialProof from './components/SocialProof';
 
 // Pages
 import Home from './pages/Home';
@@ -84,6 +85,7 @@ function App() {
               <Footer />
               <ComparisonBar />
               <WhatsAppButton />
+              <SocialProof />
               <Toaster position="top-right" />
             </div>
           </Router>
