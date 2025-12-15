@@ -213,7 +213,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
         
         // Get current product details
         const productRows = await query(
-          'SELECT id, name, brand, price, original_price, images FROM products WHERE id = ?',
+          'SELECT id, name, brand, price, images FROM products WHERE id = ?',
           [data.productId]
         );
         
@@ -232,26 +232,19 @@ router.post('/', authenticateAdmin, async (req, res) => {
         
         console.log('🔍 Price calculation:', { currentPrice, newPrice });
         
-        // Use existing original_price if it exists, otherwise use current price
-        const originalPrice = product.original_price ? parseFloat(product.original_price) : currentPrice;
-        
-        console.log('🔍 Original price determined:', originalPrice);
+        // PostgreSQL production schema may not have original_price.
+        // Track original price inside notification data instead.
+        const originalPrice = currentPrice;
+        console.log('🔍 Original price determined (from current price):', originalPrice);
         
         const savings = (originalPrice - newPrice).toFixed(2);
         const discountPercent = Math.round(((originalPrice - newPrice) / originalPrice) * 100);
         
-        // Update product price and set original_price if not already set
-        if (!product.original_price) {
-          await query(
-            'UPDATE products SET price = ?, original_price = ? WHERE id = ?',
-            [newPrice, currentPrice, data.productId]
-          );
-        } else {
-          await query(
-            'UPDATE products SET price = ? WHERE id = ?',
-            [newPrice, data.productId]
-          );
-        }
+        // Update product price (no original_price column in production)
+        await query(
+          'UPDATE products SET price = ? WHERE id = ?',
+          [newPrice, data.productId]
+        );
         
         // Create enhanced notification data
         // Handle images - could be string or array
@@ -421,17 +414,17 @@ router.post('/:id/end-promotion', authenticateAdmin, async (req, res) => {
     if (data.productId) {
       // Get product details
       const productRows = await query(
-        'SELECT id, name, brand, price, original_price FROM products WHERE id = ?',
+        'SELECT id, name, brand, price FROM products WHERE id = ?',
         [data.productId]
       );
       
-      if (productRows.length > 0 && productRows[0].original_price) {
+      if (productRows.length > 0 && data.originalPrice != null) {
         const product = productRows[0];
-        const originalPrice = parseFloat(product.original_price);
+        const originalPrice = parseFloat(data.originalPrice);
         
         // Restore original price
         await query(
-          'UPDATE products SET price = ?, original_price = NULL WHERE id = ?',
+          'UPDATE products SET price = ? WHERE id = ?',
           [originalPrice, data.productId]
         );
         
@@ -502,7 +495,7 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
 });
 
 // GET /api/admin/notifications/debug-schema - Debug notifications table schema
-router.get('/debug-schema', async (req, res) => {
+router.get('/debug-schema', authenticateAdmin, async (req, res) => {
   try {
     // Check table columns
     const columns = await query(`
