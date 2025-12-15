@@ -313,6 +313,8 @@ const Home = () => {
                   <img 
                     src={heroSlides[currentSlide].image}
                     alt={heroSlides[currentSlide].title}
+                    loading="eager"
+                    decoding="async"
                     className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
                     style={{ 
                       filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))'
@@ -474,6 +476,8 @@ const Home = () => {
                     <img
                       src={product.images?.[0] || '/placeholder.jpg'}
                       alt={product.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-56 object-contain p-4 group-hover:scale-110 transition-transform duration-500"
                     />
                     

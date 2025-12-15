@@ -75,6 +75,8 @@ const ProductImageGallery = ({ images = [], productName = 'Product' }) => {
             src={displayImages[selectedImage]}
             alt={`${productName} - Image ${selectedImage + 1}`}
             className="main-image"
+            loading="lazy"
+            decoding="async"
             style={isZoomed ? {
               transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
               transform: 'scale(2.5)'
@@ -140,6 +142,8 @@ const ProductImageGallery = ({ images = [], productName = 'Product' }) => {
               <img
                 src={image}
                 alt={`${productName} thumbnail ${index + 1}`}
+                loading="lazy"
+                decoding="async"
               />
             </button>
           ))}

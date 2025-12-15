@@ -358,6 +358,8 @@ const Products = () => {
                           <img
                             src={product.images?.[0] || '/placeholder.jpg'}
                             alt={product.name}
+                            loading="lazy"
+                            decoding="async"
                             className={`w-full object-contain p-4 group-hover:scale-110 transition-transform duration-500 ${
                               viewMode === 'list' ? 'h-48' : 'h-56'
                             }`}
