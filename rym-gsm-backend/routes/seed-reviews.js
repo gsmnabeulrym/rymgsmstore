@@ -157,8 +157,8 @@ router.post('/', async (req, res) => {
 
         try {
           await query(
-            `INSERT INTO reviews (product_id, user_id, rating, comment, status) VALUES (?, ?, ?, ?, ?)`,
-            [product.id, user.id, rating, comment, 'approved']
+            `INSERT INTO reviews (product_id, user_id, rating, comment) VALUES (?, ?, ?, ?)`,
+            [product.id, user.id, rating, comment]
           );
           totalReviews++;
         } catch (err) {
