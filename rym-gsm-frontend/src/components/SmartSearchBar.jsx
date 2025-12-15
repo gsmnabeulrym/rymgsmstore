@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Clock, TrendingUp, Smartphone, Laptop, Headphones } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../config/api';
 
@@ -10,6 +10,7 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
   const [recentSearches, setRecentSearches] = useState([]);
   const searchRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -24,12 +25,23 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
     queryKey: ['search-suggestions', query],
     queryFn: async () => {
       if (query.length < 2) return { products: [], brands: [], categories: [] };
-      const response = await api.get(`/products/search/suggestions?q=${encodeURIComponent(query)}`);
-      return response.data;
+      try {
+        const response = await api.get(`/products/search/suggestions?q=${encodeURIComponent(query)}`);
+        return response.data;
+      } catch (e) {
+        return { products: [], brands: [], categories: [] };
+      }
     },
     enabled: query.length >= 2,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/products')) return;
+    if (isOpen) return;
+    const currentSearch = new URLSearchParams(location.search).get('search') || '';
+    setQuery(currentSearch);
+  }, [location.pathname, location.search, isOpen]);
 
   // Popular searches and categories
   const popularSearches = [
@@ -46,17 +58,30 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
   const handleSearch = (searchQuery = query) => {
     if (!searchQuery.trim()) return;
 
+    const raw = searchQuery.trim();
+    const matchCategory = raw.match(/^category\s*:\s*(.+)$/i);
+    const matchBrand = raw.match(/^brand\s*:\s*(.+)$/i);
+
     // Save to recent searches
     const newRecentSearches = [
-      searchQuery,
-      ...recentSearches.filter(s => s !== searchQuery)
+      raw,
+      ...recentSearches.filter(s => s !== raw)
     ].slice(0, 5);
     
     setRecentSearches(newRecentSearches);
     localStorage.setItem('recentSearches', JSON.stringify(newRecentSearches));
 
-    // Navigate to products page with search
-    navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+    const params = new URLSearchParams(location.pathname.startsWith('/products') ? location.search : '');
+    if (matchCategory) {
+      params.set('category', matchCategory[1].trim());
+      params.delete('search');
+    } else if (matchBrand) {
+      params.set('brand', matchBrand[1].trim());
+      params.delete('search');
+    } else {
+      params.set('search', raw);
+    }
+    navigate(`/products?${params.toString()}`);
     setIsOpen(false);
     setQuery('');
 
@@ -85,6 +110,13 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
   const clearSearch = () => {
     setQuery('');
     setIsOpen(false);
+    if (location.pathname.startsWith('/products')) {
+      const params = new URLSearchParams(location.search);
+      if (params.has('search')) {
+        params.delete('search');
+        navigate(`/products?${params.toString()}`);
+      }
+    }
     searchRef.current?.focus();
   };
 
@@ -120,16 +152,26 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
           onKeyDown={handleKeyPress}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full pl-12 pr-12 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 text-gray-900 placeholder-gray-500"
+          className="w-full pl-12 pr-28 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 text-gray-900 placeholder-gray-500 shadow-sm"
         />
-        {query && (
+        <div className="absolute inset-y-0 right-0 flex items-center">
+          {query && (
+            <button
+              onClick={clearSearch}
+              className="px-3 h-full flex items-center text-gray-400 hover:text-gray-600"
+              type="button"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
           <button
-            onClick={clearSearch}
-            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+            onClick={() => handleSearch()}
+            className="mr-2 px-4 py-2 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors"
+            type="button"
           >
-            <X className="h-5 w-5" />
+            Rechercher
           </button>
-        )}
+        </div>
       </div>
 
       {/* Search Dropdown */}

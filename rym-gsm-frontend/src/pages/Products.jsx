@@ -65,6 +65,7 @@ const Products = () => {
     const storage = searchParams.get('storage');
     if (storage) newFilters.storage = storage.split(',');
     setFilters(newFilters);
+    setCurrentPage(1);
   }, [searchParams]);
 
   const { data: productsData, isLoading, error } = useQuery({
