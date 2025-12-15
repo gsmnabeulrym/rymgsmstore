@@ -250,18 +250,18 @@ const Home = () => {
             </div>
 
             {/* Right Content - Phone Display */}
-            <div className="relative flex justify-center items-center animate-slide-in-right">
+            <div className="relative flex justify-center items-center animate-slide-in-right h-[400px] md:h-[500px]">
               {/* Glowing ring */}
               <div className="absolute w-80 h-80 md:w-96 md:h-96 rounded-full border-4 border-white/20 animate-pulse"></div>
               <div className="absolute w-72 h-72 md:w-80 md:h-80 rounded-full border-2 border-white/10 animate-pulse delay-500"></div>
               
               {/* Phone Image */}
               <div className="relative z-10 animate-phone-float">
-                <div className="relative">
+                <div className="relative h-[300px] md:h-[400px] flex items-center justify-center">
                   <img 
                     src={heroSlides[currentSlide].image}
                     alt={heroSlides[currentSlide].title}
-                    className="w-64 md:w-80 h-auto object-contain"
+                    className="w-auto h-full object-contain max-w-[280px] md:max-w-[350px]"
                     style={{ 
                       filter: 'drop-shadow(0 25px 50px rgba(0,0,0,0.4))'
                     }}
