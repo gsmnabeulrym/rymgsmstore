@@ -51,13 +51,18 @@
     @apply border-gray-200;
   }
   
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
   body {
     @apply bg-gradient-to-br from-gray-50 to-gray-100 font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
-  }
-  
-  html {
-    scroll-behavior: smooth;
+    overflow-x: hidden;
+    max-width: 100vw;
+    position: relative;
   }
 }
 

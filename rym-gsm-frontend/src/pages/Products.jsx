@@ -148,9 +148,9 @@ const Products = () => {
   ).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden w-full">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
           <div className="absolute inset-0 opacity-30" 
             style={{
@@ -181,12 +181,12 @@ const Products = () => {
           </div>
 
           {/* Category Pills */}
-          <div className="flex flex-wrap justify-center gap-3 mt-8 animate-slide-in-up delay-300">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-8 animate-slide-in-up delay-300 max-w-full px-2">
             {categories.map((cat) => (
               <button
                 key={cat.value}
                 onClick={() => handleFiltersChange({ ...filters, category: cat.value || undefined })}
-                className={`flex items-center gap-2 px-5 py-3 rounded-full font-medium transition-all duration-300 ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 rounded-full font-medium transition-all duration-300 text-sm sm:text-base whitespace-nowrap ${
                   (filters.category || '') === cat.value
                     ? 'bg-white text-gray-900 shadow-lg scale-105'
                     : 'bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm'
@@ -201,10 +201,10 @@ const Products = () => {
       </section>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 w-full">
         {/* Toolbar */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-4">
+        <div className="bg-white rounded-2xl shadow-sm p-3 sm:p-4 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 w-full">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
@@ -227,7 +227,7 @@ const Products = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* Sort Dropdown */}
             <div className="relative">
               <select
@@ -270,9 +270,9 @@ const Products = () => {
           </div>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex gap-4 lg:gap-8 w-full">
           {/* Filters Sidebar */}
-          <div className={`transition-all duration-300 ${showFilters ? 'w-80 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
+          <div className={`transition-all duration-300 flex-shrink-0 ${showFilters ? 'w-full sm:w-80 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
             <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-gray-900">Filtres</h3>
@@ -293,7 +293,7 @@ const Products = () => {
           </div>
 
           {/* Products Grid */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0 w-full">
             {error ? (
               <div className="text-center py-20 bg-white rounded-2xl">
                 <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
