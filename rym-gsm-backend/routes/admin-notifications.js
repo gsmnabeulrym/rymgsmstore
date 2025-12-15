@@ -133,7 +133,7 @@ router.get('/products', authenticateAdmin, async (req, res) => {
       brand: product.brand,
       price: parseFloat(product.price),
       category: product.category,
-      image: JSON.parse(product.images || '[]')[0] || null
+      image: (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []))[0] || null
     }));
     
     res.json({

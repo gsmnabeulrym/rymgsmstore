@@ -164,7 +164,7 @@ const AdminNotifications = () => {
 
   const formatNotificationData = (notification) => {
     try {
-      const data = JSON.parse(notification.data || '{}');
+      const data = typeof notification.data === 'string' ? JSON.parse(notification.data || '{}') : (notification.data || {});
       if (notification.type === 'promotion') {
         if (data.productName) {
           return `🏷️ ${data.productBrand} ${data.productName}\n💰 ${data.originalPrice} Dt → ${data.salePrice} Dt\n💸 Save ${data.savings} Dt (${data.discount}% off!)`;
@@ -182,7 +182,7 @@ const AdminNotifications = () => {
 
   const handleNotificationClick = (notification) => {
     try {
-      const data = JSON.parse(notification.data || '{}');
+      const data = typeof notification.data === 'string' ? JSON.parse(notification.data || '{}') : (notification.data || {});
       if (data.productId) {
         // Open product page in new tab
         window.open(`/products/${data.productId}`, '_blank');
@@ -333,7 +333,7 @@ const AdminNotifications = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {notificationsData?.notifications?.map((notification) => {
-                    const data = JSON.parse(notification.data || '{}');
+                    const data = typeof notification.data === 'string' ? JSON.parse(notification.data || '{}') : (notification.data || {});
                     const hasProduct = data.productId;
                     
                     return (
@@ -690,7 +690,7 @@ const CreateNotificationModal = ({ onClose, onSubmit, isLoading, products }) => 
 
 // View Notification Modal Component
 const ViewNotificationModal = ({ notification, onClose }) => {
-  const data = notification.data ? JSON.parse(notification.data) : {};
+  const data = typeof notification.data === 'string' ? JSON.parse(notification.data || '{}') : (notification.data || {});
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
