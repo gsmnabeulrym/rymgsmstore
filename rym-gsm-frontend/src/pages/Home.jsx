@@ -178,7 +178,7 @@ const Home = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="text-white space-y-6 h-[700px] md:h-[750px] flex flex-col justify-center">
+            <div className="text-white space-y-6 h-[850px] md:h-[800px] flex flex-col justify-center">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full animate-slide-in-left w-fit">
                 <Sparkles className="h-4 w-4 text-yellow-300" />
@@ -200,7 +200,7 @@ const Home = () => {
               </div>
 
               {/* Price */}
-              <div className="animate-slide-in-left delay-300 h-[100px] flex items-center">
+              <div className="animate-slide-in-left delay-300 h-[190px] md:h-[120px] flex items-center">
                 <div key={`price-${currentSlide}`} className="w-full">
                   {heroSlides[currentSlide].price4g ? (
                     <div className="flex flex-wrap gap-4">
@@ -222,7 +222,7 @@ const Home = () => {
               </div>
 
               {/* Features - Dynamic per phone */}
-              <div className="grid grid-cols-2 gap-4 animate-slide-in-left delay-500 h-[100px]">
+              <div className="grid grid-cols-2 gap-4 animate-slide-in-left delay-500 h-[130px]">
                 {heroSlides[currentSlide].specs.map((spec, i) => {
                   const icons = {
                     wifi: <Wifi className="h-5 w-5" />,
