@@ -355,9 +355,13 @@ router.post('/', authenticateAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating notification:', error);
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Server error creating notification'
+      message: 'Server error creating notification',
+      error: error.message,
+      details: error.stack
     });
   }
 });
