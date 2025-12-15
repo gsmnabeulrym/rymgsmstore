@@ -187,16 +187,16 @@ const Home = () => {
 
               {/* Title */}
               <div className="space-y-4">
-                <h1 className="text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100">
+                <h1 className="text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100 min-h-[1.2em] md:min-h-[1.2em] flex items-end">
                   {heroSlides[currentSlide].title}
                 </h1>
-                <p className="text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200">
+                <p className="text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200 min-h-[1.5em] flex items-center">
                   {heroSlides[currentSlide].subtitle}
                 </p>
               </div>
 
               {/* Price */}
-              <div className="animate-slide-in-left delay-300">
+              <div className="animate-slide-in-left delay-300 min-h-[88px] flex items-center">
                 {heroSlides[currentSlide].price4g ? (
                   <div className="flex flex-wrap gap-4">
                     <div className="glass px-6 py-4 rounded-2xl">
