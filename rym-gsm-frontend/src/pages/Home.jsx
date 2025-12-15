@@ -178,7 +178,7 @@ const Home = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="text-white space-y-8 h-[650px] md:h-[700px] flex flex-col justify-center">
+            <div className="text-white space-y-6 h-[700px] md:h-[750px] flex flex-col justify-center">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full animate-slide-in-left w-fit">
                 <Sparkles className="h-4 w-4 text-yellow-300" />
@@ -187,7 +187,7 @@ const Home = () => {
 
               {/* Title */}
               <div className="space-y-4">
-                <div className="h-[140px] md:h-[180px] flex items-end pb-4">
+                <div className="h-[160px] md:h-[180px] flex items-end pb-2">
                   <h1 key={`title-${currentSlide}`} className="text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100">
                     {heroSlides[currentSlide].title}
                   </h1>
