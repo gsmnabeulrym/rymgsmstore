@@ -1,0 +1,217 @@
+const express = require('express');
+const { query } = require('../config/database');
+const router = express.Router();
+
+// Realistic French review comments for phones
+const positiveComments = [
+  "Excellent téléphone ! La qualité de l'écran est incroyable et la batterie tient toute la journée. Je recommande vivement.",
+  "Très satisfait de mon achat. Le rapport qualité-prix est excellent. Livraison rapide par RYM GSM.",
+  "Super produit ! Les photos sont magnifiques et le téléphone est très fluide. Merci RYM GSM !",
+  "Je suis vraiment content de cet achat. Le design est élégant et les performances sont au top.",
+  "Parfait pour mon usage quotidien. L'appareil photo est excellent et la batterie dure longtemps.",
+  "Meilleur achat que j'ai fait cette année ! Le téléphone est rapide et l'écran est superbe.",
+  "Qualité exceptionnelle ! Je recommande ce produit à tous mes amis. Service client RYM GSM au top.",
+  "Très bon téléphone, conforme à la description. Livraison rapide et produit bien emballé.",
+  "J'adore ce téléphone ! Il est beau, performant et la caméra prend des photos incroyables.",
+  "Excellent rapport qualité-prix. Le téléphone fonctionne parfaitement depuis plusieurs mois.",
+  "Super expérience d'achat chez RYM GSM. Le produit est arrivé rapidement et en parfait état.",
+  "Ce téléphone dépasse mes attentes ! L'écran est magnifique et les performances sont excellentes.",
+  "Très content de mon nouveau téléphone. La qualité de construction est impressionnante.",
+  "Produit de qualité supérieure. Je suis très satisfait de mon achat chez RYM GSM.",
+  "Le meilleur téléphone que j'ai eu ! Rapide, beau et avec une excellente autonomie.",
+  "Achat parfait ! Le téléphone est exactement comme décrit. Merci pour le service rapide.",
+  "Incroyable qualité d'écran et de son. Ce téléphone vaut vraiment son prix.",
+  "Je recommande fortement ce produit. Excellent service et produit de haute qualité.",
+  "Téléphone magnifique avec des fonctionnalités top. Très satisfait de RYM GSM.",
+  "Super achat ! Le téléphone est fluide, la batterie est excellente et le design est moderne."
+];
+
+const goodComments = [
+  "Bon téléphone dans l'ensemble. Quelques petits détails à améliorer mais je suis satisfait.",
+  "Produit correct pour le prix. La livraison était rapide et le service client réactif.",
+  "Téléphone fonctionnel et fiable. Rien d'extraordinaire mais fait bien le travail.",
+  "Satisfait de mon achat. Le téléphone répond à mes besoins quotidiens sans problème.",
+  "Bon rapport qualité-prix. Le téléphone est performant pour un usage normal.",
+  "Produit conforme à mes attentes. La batterie pourrait être un peu meilleure.",
+  "Téléphone correct avec une bonne autonomie. L'appareil photo est acceptable.",
+  "Je suis content de mon achat. Le téléphone fonctionne bien depuis plusieurs semaines.",
+  "Bon produit pour le prix demandé. Service RYM GSM professionnel.",
+  "Téléphone solide et fiable. Je le recommande pour un usage quotidien standard."
+];
+
+const averageComments = [
+  "Produit moyen. Fait le travail mais rien d'exceptionnel. Service client correct.",
+  "Téléphone basique mais fonctionnel. Convient pour un usage simple.",
+  "Correct pour le prix. Quelques lenteurs parfois mais globalement acceptable."
+];
+
+// Tunisian names for reviewers
+const reviewerNames = [
+  "Ahmed Ben Ali", "Fatma Trabelsi", "Mohamed Gharbi", "Amira Bouazizi", "Youssef Mansouri",
+  "Salma Hamdi", "Karim Jebali", "Mariem Chaabane", "Nizar Belhadj", "Ines Maalej",
+  "Sami Dridi", "Rania Khelifi", "Hichem Sassi", "Nour Mejri", "Walid Bouzid",
+  "Sonia Ferchichi", "Riadh Ayari", "Asma Guesmi", "Mehdi Riahi", "Hajer Souissi",
+  "Amine Lahmar", "Rim Bouslama", "Fares Mahjoub", "Olfa Kchaou", "Bilel Hammami",
+  "Cyrine Belhaj", "Zied Arfaoui", "Emna Jaziri", "Oussama Khemiri", "Malek Saidi"
+];
+
+// POST /api/seed-reviews - Seed reviews for all products (admin only, one-time use)
+router.post('/', async (req, res) => {
+  try {
+    // Optional: Add a secret key check for security
+    const { secret } = req.body;
+    if (secret !== 'rym-gsm-seed-2024') {
+      return res.status(403).json({ message: 'Invalid secret key' });
+    }
+
+    console.log('🌱 Starting review seeding process...');
+
+    // Get all products
+    const products = await query('SELECT id, name FROM products');
+    console.log(`📦 Found ${products.length} products`);
+
+    if (products.length === 0) {
+      return res.status(400).json({ message: 'No products found in database' });
+    }
+
+    // Get all users
+    let users = await query('SELECT id, name FROM users');
+    console.log(`👥 Found ${users.length} existing users`);
+
+    // Create fake reviewer users if we don't have enough
+    const minUsers = 15;
+    if (users.length < minUsers) {
+      console.log(`📝 Creating ${minUsers - users.length} fake reviewer users...`);
+      
+      for (let i = users.length; i < minUsers; i++) {
+        const name = reviewerNames[i % reviewerNames.length];
+        const email = `reviewer${Date.now()}_${i}@rymgsm.com`;
+        const password = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+        
+        try {
+          await query(
+            'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+            [name, email, password, 'user']
+          );
+        } catch (err) {
+          console.log(`⚠️ Could not create user ${name}: ${err.message}`);
+        }
+      }
+      
+      // Refresh users list
+      users = await query('SELECT id, name FROM users WHERE role = ?', ['user']);
+      console.log(`👥 Now have ${users.length} users for reviews`);
+    }
+
+    // Check existing reviews
+    const existingReviews = await query('SELECT COUNT(*) as count FROM reviews');
+    const existingCount = parseInt(existingReviews[0].count);
+    console.log(`📊 Existing reviews: ${existingCount}`);
+
+    // Clear existing reviews if any
+    if (existingCount > 0) {
+      console.log('🗑️ Clearing existing reviews...');
+      await query('DELETE FROM reviews');
+    }
+
+    // Generate reviews for each product
+    let totalReviews = 0;
+
+    for (const product of products) {
+      // Random number of reviews per product (3-8)
+      const numReviews = Math.floor(Math.random() * 6) + 3;
+      const usedUserIds = new Set();
+
+      for (let i = 0; i < numReviews && i < users.length; i++) {
+        // Pick a random user that hasn't reviewed this product yet
+        let user;
+        let attempts = 0;
+        do {
+          user = users[Math.floor(Math.random() * users.length)];
+          attempts++;
+        } while (usedUserIds.has(user.id) && attempts < 20);
+
+        if (usedUserIds.has(user.id)) continue;
+        usedUserIds.add(user.id);
+
+        // Generate rating (weighted towards positive)
+        const ratingRoll = Math.random();
+        let rating;
+        let comment;
+
+        if (ratingRoll < 0.60) {
+          rating = 5;
+          comment = positiveComments[Math.floor(Math.random() * positiveComments.length)];
+        } else if (ratingRoll < 0.85) {
+          rating = 4;
+          comment = goodComments[Math.floor(Math.random() * goodComments.length)];
+        } else if (ratingRoll < 0.95) {
+          rating = 3;
+          comment = averageComments[Math.floor(Math.random() * averageComments.length)];
+        } else {
+          rating = Math.random() < 0.5 ? 2 : 4;
+          comment = goodComments[Math.floor(Math.random() * goodComments.length)];
+        }
+
+        // Random date within last 6 months
+        const daysAgo = Math.floor(Math.random() * 180);
+        const reviewDate = new Date();
+        reviewDate.setDate(reviewDate.getDate() - daysAgo);
+
+        try {
+          await query(
+            `INSERT INTO reviews (product_id, user_id, rating, comment, status, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [product.id, user.id, rating, comment, 'approved', reviewDate.toISOString(), reviewDate.toISOString()]
+          );
+          totalReviews++;
+        } catch (err) {
+          console.log(`⚠️ Could not create review for product ${product.id}: ${err.message}`);
+        }
+      }
+
+      console.log(`  ✅ ${product.name}: ${usedUserIds.size} reviews added`);
+    }
+
+    console.log(`\n🎉 Successfully seeded ${totalReviews} reviews for ${products.length} products!`);
+
+    // Get summary
+    const summary = await query(`
+      SELECT 
+        COUNT(*) as total_reviews
+      FROM reviews
+    `);
+
+    res.json({
+      success: true,
+      message: `Successfully seeded ${totalReviews} reviews for ${products.length} products`,
+      stats: {
+        totalReviews: parseInt(summary[0].total_reviews),
+        productsWithReviews: products.length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error seeding reviews:', error);
+    res.status(500).json({ message: 'Error seeding reviews', error: error.message });
+  }
+});
+
+// GET /api/seed-reviews/status - Check review status
+router.get('/status', async (req, res) => {
+  try {
+    const reviewCount = await query('SELECT COUNT(*) as count FROM reviews');
+    const productCount = await query('SELECT COUNT(*) as count FROM products');
+    const avgRating = await query('SELECT ROUND(AVG(rating), 2) as avg FROM reviews');
+
+    res.json({
+      totalReviews: parseInt(reviewCount[0].count),
+      totalProducts: parseInt(productCount[0].count),
+      averageRating: parseFloat(avgRating[0].avg) || 0
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking status', error: error.message });
+  }
+});
+
+module.exports = router;
