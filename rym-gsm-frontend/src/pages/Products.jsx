@@ -14,6 +14,7 @@ import SmartSearchBar from '../components/SmartSearchBar';
 import AdvancedFilters from '../components/AdvancedFilters';
 import WishlistButton from '../components/WishlistButton';
 import ComparisonButton from '../components/comparison/ComparisonButton';
+import SEO from '../components/SEO';
 import api from '../config/api';
 import toast from 'react-hot-toast';
 
@@ -148,7 +149,14 @@ const Products = () => {
   ).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <>
+      <SEO 
+        title="Produits - Téléphones & Smartphones"
+        description="Découvrez notre large sélection de téléphones et smartphones. Samsung, iPhone, Xiaomi, OPPO, accessoires et plus. Prix compétitifs, livraison rapide à Nabeul et toute la Tunisie."
+        keywords="téléphones, smartphones, Samsung, iPhone, Xiaomi, OPPO, accessoires mobile, Nabeul, Tunisie"
+        url="https://rymgsm.com/products"
+      />
+      <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative overflow-hidden w-full">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -493,6 +501,7 @@ const Products = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

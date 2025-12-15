@@ -1,0 +1,17 @@
+# RYM GSM Nabeul - Robots.txt
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Disallow admin and checkout pages from search engines
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /checkout
+Disallow: /cart
+
+# Sitemap location
+Sitemap: https://rymgsm.com/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1

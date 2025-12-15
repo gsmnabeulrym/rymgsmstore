@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { WishlistProvider } from './contexts/WishlistContext';
@@ -44,15 +45,16 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <NotificationProvider>
-              <ComparisonProvider>
-              <Router>
-                <ScrollToTop />
-            <div className="min-h-screen bg-gray-50 overflow-x-hidden w-full">
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <NotificationProvider>
+                <ComparisonProvider>
+                <Router>
+                  <ScrollToTop />
+              <div className="min-h-screen bg-gray-50 overflow-x-hidden w-full">
               <Navbar />
               <main className="w-full overflow-x-hidden">
                 <Routes>
@@ -91,6 +93,7 @@ function App() {
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 
