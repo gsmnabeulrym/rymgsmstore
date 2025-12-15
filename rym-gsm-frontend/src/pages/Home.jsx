@@ -178,7 +178,7 @@ const Home = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="text-white space-y-8 min-h-[500px] md:min-h-[600px] flex flex-col justify-center">
+            <div className="text-white space-y-8 h-[650px] md:h-[700px] flex flex-col justify-center">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full animate-slide-in-left w-fit">
                 <Sparkles className="h-4 w-4 text-yellow-300" />
@@ -188,12 +188,12 @@ const Home = () => {
               {/* Title */}
               <div className="space-y-4">
                 <div className="h-[140px] md:h-[180px] flex items-end pb-4">
-                  <h1 className="text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100">
+                  <h1 key={`title-${currentSlide}`} className="text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100">
                     {heroSlides[currentSlide].title}
                   </h1>
                 </div>
                 <div className="h-[80px] flex items-start">
-                  <p className="text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200">
+                  <p key={`subtitle-${currentSlide}`} className="text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200">
                     {heroSlides[currentSlide].subtitle}
                   </p>
                 </div>
@@ -201,22 +201,24 @@ const Home = () => {
 
               {/* Price */}
               <div className="animate-slide-in-left delay-300 h-[100px] flex items-center">
-                {heroSlides[currentSlide].price4g ? (
-                  <div className="flex flex-wrap gap-4">
-                    <div className="glass px-6 py-4 rounded-2xl">
-                      <span className="text-sm text-white/70">4G</span>
-                      <div className="text-3xl font-bold">{heroSlides[currentSlide].price4g} <span className="text-lg">Dt</span></div>
+                <div key={`price-${currentSlide}`} className="w-full">
+                  {heroSlides[currentSlide].price4g ? (
+                    <div className="flex flex-wrap gap-4">
+                      <div className="glass px-6 py-4 rounded-2xl">
+                        <span className="text-sm text-white/70">4G</span>
+                        <div className="text-3xl font-bold">{heroSlides[currentSlide].price4g} <span className="text-lg">Dt</span></div>
+                      </div>
+                      <div className="glass px-6 py-4 rounded-2xl border-2 border-yellow-400/50">
+                        <span className="text-sm text-yellow-300">5G</span>
+                        <div className="text-3xl font-bold">{heroSlides[currentSlide].price5g} <span className="text-lg">Dt</span></div>
+                      </div>
                     </div>
-                    <div className="glass px-6 py-4 rounded-2xl border-2 border-yellow-400/50">
-                      <span className="text-sm text-yellow-300">5G</span>
-                      <div className="text-3xl font-bold">{heroSlides[currentSlide].price5g} <span className="text-lg">Dt</span></div>
+                  ) : (
+                    <div className="glass inline-block px-8 py-4 rounded-2xl">
+                      <span className="text-4xl font-bold">{heroSlides[currentSlide].price} <span className="text-xl">Dt</span></span>
                     </div>
-                  </div>
-                ) : (
-                  <div className="glass inline-block px-8 py-4 rounded-2xl">
-                    <span className="text-4xl font-bold">{heroSlides[currentSlide].price} <span className="text-xl">Dt</span></span>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* Features - Dynamic per phone */}
@@ -229,7 +231,7 @@ const Home = () => {
                     cpu: <Cpu className="h-5 w-5" />
                   };
                   return (
-                    <div key={i} className="flex items-center gap-3 text-white/80">
+                    <div key={`${currentSlide}-spec-${i}`} className="flex items-center gap-3 text-white/80">
                       <div className="p-2 bg-white/10 rounded-lg">{icons[spec.icon]}</div>
                       <span>{spec.text}</span>
                     </div>
