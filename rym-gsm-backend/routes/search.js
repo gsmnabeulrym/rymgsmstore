@@ -1,5 +1,5 @@
 const express = require('express');
-const { query, isPostgres } = require('../config/database');
+const { query } = require('../config/database');
 const router = express.Router();
 
 // GET /api/products/search/suggestions - Get search suggestions
@@ -12,22 +12,23 @@ router.get('/products/search/suggestions', async (req, res) => {
     }
 
     const searchTerm = `%${q}%`;
+    const prefixTerm = `${q}%`;
 
     // Search products
     const products = await query(`
       SELECT id, name, price, brand, images 
       FROM products 
-      WHERE (name LIKE ? OR description LIKE ? OR brand LIKE ?) 
+      WHERE (LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?) OR LOWER(brand) LIKE LOWER(?)) 
       AND stock > 0 
       ORDER BY 
         CASE 
-          WHEN name LIKE ? THEN 1
-          WHEN brand LIKE ? THEN 2
+          WHEN LOWER(name) LIKE LOWER(?) THEN 1
+          WHEN LOWER(brand) LIKE LOWER(?) THEN 2
           ELSE 3
         END,
         name ASC
       LIMIT 8
-    `, [searchTerm, searchTerm, searchTerm, `${q}%`, `${q}%`]);
+    `, [searchTerm, searchTerm, searchTerm, prefixTerm, prefixTerm]);
 
     // Parse images for products
     const productsWithImages = products.map(product => ({
@@ -39,7 +40,7 @@ router.get('/products/search/suggestions', async (req, res) => {
     const brands = await query(`
       SELECT DISTINCT brand 
       FROM products 
-      WHERE brand LIKE ? 
+      WHERE LOWER(brand) LIKE LOWER(?) 
       AND stock > 0 
       ORDER BY brand ASC 
       LIMIT 6
@@ -49,7 +50,7 @@ router.get('/products/search/suggestions', async (req, res) => {
     const categories = await query(`
       SELECT DISTINCT category 
       FROM products 
-      WHERE category LIKE ? 
+      WHERE LOWER(category) LIKE LOWER(?) 
       AND stock > 0 
       ORDER BY category ASC 
       LIMIT 4

@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
 
     // Search by name or description
     if (search) {
-      query += ' AND (name LIKE ? OR description LIKE ?)';
+      query += ' AND (LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))';
       queryParams.push(`%${search}%`, `%${search}%`);
     }
 
@@ -36,10 +36,10 @@ router.get('/', async (req, res) => {
     if (brand) {
       const brands = brand.split(',').map(b => b.trim());
       if (brands.length === 1) {
-        query += ' AND brand = ?';
+        query += ' AND LOWER(brand) = LOWER(?)';
         queryParams.push(brands[0]);
       } else {
-        query += ` AND brand IN (${brands.map(() => '?').join(',')})`;
+        query += ` AND LOWER(brand) IN (${brands.map(() => 'LOWER(?)').join(',')})`;
         queryParams.push(...brands);
       }
     }
@@ -131,12 +131,18 @@ router.get('/', async (req, res) => {
     const countParams = [];
 
     if (search) {
-      countQuery += ' AND (name LIKE ? OR description LIKE ?)';
+      countQuery += ' AND (LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))';
       countParams.push(`%${search}%`, `%${search}%`);
     }
     if (brand) {
-      countQuery += ' AND brand = ?';
-      countParams.push(brand);
+      const brands = brand.split(',').map(b => b.trim());
+      if (brands.length === 1) {
+        countQuery += ' AND LOWER(brand) = LOWER(?)';
+        countParams.push(brands[0]);
+      } else {
+        countQuery += ` AND LOWER(brand) IN (${brands.map(() => 'LOWER(?)').join(',')})`;
+        countParams.push(...brands);
+      }
     }
     if (category) {
       countQuery += ' AND category = ?';
