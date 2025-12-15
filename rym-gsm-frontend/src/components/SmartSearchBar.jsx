@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X, Clock, TrendingUp, Smartphone, Laptop, Headphones } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -9,8 +10,10 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
   const [isOpen, setIsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
   const searchRef = useRef(null);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0, width: 0, maxHeight: 384 });
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -97,6 +100,12 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
     setIsOpen(true);
   };
 
+  const handleSelectSuggestion = (to) => {
+    navigate(to);
+    setIsOpen(false);
+    setQuery('');
+  };
+
   // Handle key press
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -129,7 +138,9 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
+      const clickedSearch = searchRef.current && searchRef.current.contains(event.target);
+      const clickedDropdown = dropdownRef.current && dropdownRef.current.contains(event.target);
+      if (!clickedSearch && !clickedDropdown) {
         setIsOpen(false);
       }
     };
@@ -137,6 +148,35 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    if (!searchRef.current) return;
+
+    const updatePosition = () => {
+      const inputEl = searchRef.current.querySelector('input');
+      if (!inputEl) return;
+      const rect = inputEl.getBoundingClientRect();
+
+      const margin = 8;
+      const maxHeight = Math.max(180, Math.min(520, window.innerHeight - rect.bottom - margin - 12));
+
+      setDropdownStyle({
+        top: rect.bottom + margin,
+        left: rect.left,
+        width: rect.width,
+        maxHeight
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen, query]);
 
   return (
     <div className={`relative ${className}`} ref={searchRef}>
@@ -175,8 +215,19 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
       </div>
 
       {/* Search Dropdown */}
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+      {isOpen && createPortal((
+        <div
+          ref={dropdownRef}
+          className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-y-auto overscroll-contain"
+          style={{
+            position: 'fixed',
+            top: dropdownStyle.top,
+            left: dropdownStyle.left,
+            width: dropdownStyle.width,
+            maxHeight: dropdownStyle.maxHeight,
+            zIndex: 9999
+          }}
+        >
           {/* Loading State */}
           {suggestionsLoading && query.length >= 2 && (
             <div className="p-4 text-center">
@@ -197,7 +248,7 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
                   {suggestions.products.slice(0, 5).map((product) => (
                     <button
                       key={product.id}
-                      onClick={() => navigate(`/products/${product.id}`)}
+                      onClick={() => handleSelectSuggestion(`/products/${product.id}`)}
                       className="w-full flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors text-left"
                     >
                       <img
@@ -322,7 +373,7 @@ const SmartSearchBar = ({ className = "", onSearch, placeholder = "Rechercher t\
             </div>
           )}
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 };
