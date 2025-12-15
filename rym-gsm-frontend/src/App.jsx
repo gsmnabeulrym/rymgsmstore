@@ -11,6 +11,7 @@ import { ComparisonProvider } from './contexts/ComparisonContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
+import ScrollToTop from './components/ScrollToTop';
 
 // Pages
 import Home from './pages/Home';
@@ -50,6 +51,7 @@ function App() {
             <NotificationProvider>
               <ComparisonProvider>
               <Router>
+                <ScrollToTop />
             <div className="min-h-screen bg-gray-50">
               <Navbar />
               <main>
