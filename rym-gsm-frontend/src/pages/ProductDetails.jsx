@@ -19,6 +19,10 @@ import api from '../config/api';
 import toast from 'react-hot-toast';
 import ReviewList from '../components/ReviewList';
 import AddReview from '../components/AddReview';
+import { 
+  generateProductSchema, 
+  generateBreadcrumbSchema 
+} from '../utils/structuredData';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -108,75 +112,29 @@ const ProductDetails = () => {
     network: <Wifi className="h-5 w-5" />
   };
 
-  // Product structured data for Google rich snippets
-  const productSchema = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": product.name,
-    "image": product.images?.[0] ? `https://rymgsm.com${product.images[0]}` : "https://rymgsm.com/images/phones/rymgsmlogo.png",
-    "description": product.description || `${product.name} - Disponible chez RYM GSM Nabeul. Livraison rapide en Tunisie.`,
-    "brand": {
-      "@type": "Brand",
-      "name": product.brand || "RYM GSM"
-    },
-    "sku": product.id?.toString(),
-    "offers": {
-      "@type": "Offer",
-      "url": `https://rymgsm.com/products/${product.id}`,
-      "priceCurrency": "TND",
-      "price": product.price,
-      "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      "seller": {
-        "@type": "Organization",
-        "name": "RYM GSM Nabeul"
-      }
-    },
-    "aggregateRating": product.rating ? {
-      "@type": "AggregateRating",
-      "ratingValue": product.rating,
-      "reviewCount": product.review_count || 1,
-      "bestRating": "5",
-      "worstRating": "1"
-    } : undefined
-  };
-
-  // Breadcrumb structured data
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Accueil",
-        "item": "https://rymgsm.com"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Produits",
-        "item": "https://rymgsm.com/products"
-      },
-      {
-        "@type": "ListItem",
-        "position": 3,
-        "name": product.name,
-        "item": `https://rymgsm.com/products/${product.id}`
-      }
-    ]
-  };
+  // Enhanced Product structured data using utility
+  const productSchema = generateProductSchema(product);
+  
+  // Breadcrumb structured data using utility
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Accueil", url: "https://rymgsm.com" },
+    { name: "Produits", url: "https://rymgsm.com/products" },
+    { name: product?.name || "Produit", url: `https://rymgsm.com/products/${product?.id}` }
+  ]);
+  
+  // Combine structured data
+  const allStructuredData = [productSchema, breadcrumbSchema].filter(Boolean);
 
   return (
     <>
       <SEO 
-        title={`${product.name} - Acheter en Tunisie`}
-        description={`${product.name} disponible chez RYM GSM Nabeul. ${product.description?.substring(0, 120) || 'Meilleur prix en Tunisie, livraison rapide, garantie officielle.'}`}
-        keywords={`${product.name}, ${product.brand || ''}, acheter ${product.name}, ${product.name} Tunisie, ${product.name} prix, téléphone Nabeul`}
+        title={`${product.name} - Prix & Achat en Tunisie | RYM GSM Nabeul`}
+        description={`Achetez ${product.name} ${product.brand ? `(${product.brand})` : ''} chez RYM GSM Nabeul. ${product.description ? product.description.substring(0, 150) : `Meilleur prix en Tunisie pour ${product.name}.`} Livraison rapide partout en Tunisie, garantie officielle. Stock disponible.`}
+        keywords={`${product.name}, ${product.brand || ''}, acheter ${product.name}, ${product.name} Tunisie, ${product.name} prix Tunisie, ${product.name} prix, ${product.name} Nabeul, ${product.name} prix TND, téléphone ${product.brand || ''} Tunisie, smartphone ${product.name}`}
         image={product.images?.[0] ? `https://rymgsm.com${product.images[0]}` : undefined}
         url={`https://rymgsm.com/products/${product.id}`}
         type="product"
-        structuredData={[productSchema, breadcrumbSchema]}
+        structuredData={allStructuredData}
       />
       <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}

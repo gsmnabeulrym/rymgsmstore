@@ -20,6 +20,7 @@ const chatbotRoutes = require('./routes/chatbot');
 const analyticsRoutes = require('./routes/analytics-fixed');
 const comparisonRoutes = require('./routes/comparison');
 const seedReviewsRoutes = require('./routes/seed-reviews');
+const sitemapRoutes = require('./routes/sitemap');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -1698,6 +1699,9 @@ app.use('/api', searchRoutes);
 app.use('/api', orderRoutes); // Orders after wishlist
 app.use('/api/seed-reviews', seedReviewsRoutes);
 app.use('/api', productsRoutes); // Products last because it has catch-all /:id route
+
+// SEO Routes (before catch-all routes)
+app.use('/', sitemapRoutes); // Sitemap at root level /sitemap.xml
 
 console.log('🔗 Notification routes mounted at: /api/notifications');
 

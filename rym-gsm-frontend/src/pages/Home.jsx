@@ -13,48 +13,20 @@ import ProductRating from '../components/ProductRating';
 import SEO from '../components/SEO';
 import api from '../config/api';
 import toast from 'react-hot-toast';
+import { 
+  generateOrganizationSchema, 
+  generateWebSiteSchema,
+  generateItemListSchema 
+} from '../utils/structuredData';
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState({});
   const { addToCart } = useCart();
 
-  // Structured data for organization
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "RYM GSM Nabeul",
-    "image": "https://rymgsm.com/images/phones/rymgsmlogo.png",
-    "description": "Boutique spécialisée en téléphones et smartphones à Nabeul, Tunisie. Samsung, iPhone, Xiaomi, OPPO.",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Nabeul",
-      "addressLocality": "Nabeul",
-      "addressRegion": "Nabeul",
-      "postalCode": "8000",
-      "addressCountry": "TN"
-    },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": "36.456389",
-      "longitude": "10.735556"
-    },
-    "url": "https://rymgsm.com",
-    "telephone": "+216-XX-XXX-XXX",
-    "priceRange": "$$",
-    "openingHoursSpecification": [
-      {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-        "opens": "09:00",
-        "closes": "19:00"
-      }
-    ],
-    "sameAs": [
-      "https://www.facebook.com/rymgsm",
-      "https://www.instagram.com/rymgsm"
-    ]
-  };
+  // Enhanced structured data for SEO
+  const organizationSchema = generateOrganizationSchema();
+  const websiteSchema = generateWebSiteSchema();
 
   // Fetch featured products
   const { data: featuredProducts, isLoading } = useQuery({
@@ -62,6 +34,18 @@ const Home = () => {
     queryFn: () => api.get('/products?limit=8').then(res => res.data),
     select: (data) => data.products
   });
+
+  // Generate ItemList schema for featured products
+  const itemListSchema = featuredProducts 
+    ? generateItemListSchema(featuredProducts, "Produits en vedette")
+    : null;
+
+  // Combine all structured data
+  const allStructuredData = [
+    organizationSchema,
+    websiteSchema,
+    ...(itemListSchema ? [itemListSchema] : [])
+  ].filter(Boolean);
 
   // Auto-rotate hero slides
   useEffect(() => {
@@ -196,11 +180,11 @@ const Home = () => {
   return (
     <>
       <SEO 
-        title="RYM GSM Nabeul - Téléphones, Smartphones & Accessoires en Tunisie"
-        description="Découvrez RYM GSM Nabeul - Votre boutique spécialisée en téléphones et smartphones. Samsung, iPhone, Xiaomi, OPPO. Prix compétitifs, livraison rapide, garantie officielle. Achetez maintenant!"
-        keywords="RYM GSM, téléphones Nabeul, smartphones Tunisie, vente téléphone, Samsung Tunisie, iPhone Tunisie, Xiaomi, OPPO, téléphone pas cher, boutique téléphone Nabeul"
+        title="RYM GSM Nabeul - Téléphones, Smartphones & Accessoires en Tunisie | Meilleur Prix Nabeul"
+        description="RYM GSM Nabeul - Boutique spécialisée en téléphones et smartphones en Tunisie. Samsung, iPhone, Xiaomi, OPPO, Honor. Prix compétitifs, livraison rapide partout en Tunisie, garantie officielle. Magasin à Nabeul. Achetez votre smartphone maintenant!"
+        keywords="RYM GSM, téléphones Nabeul, smartphones Tunisie, vente téléphone Nabeul, Samsung Tunisie, iPhone Tunisie, Xiaomi Tunisie, OPPO Tunisie, téléphone pas cher Tunisie, accessoires mobile Tunisie, boutique téléphone Nabeul, GSM Nabeul, mobile Tunisie, smartphone prix Tunisie, acheter téléphone Nabeul, magasin téléphone Tunisie, vente smartphone Tunisie"
         url="https://rymgsm.com"
-        structuredData={organizationSchema}
+        structuredData={allStructuredData}
       />
       <div className="min-h-screen overflow-hidden">
       {/* Hero Section - Modern Split Design */}

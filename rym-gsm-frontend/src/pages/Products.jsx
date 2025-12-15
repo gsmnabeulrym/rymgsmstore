@@ -17,6 +17,7 @@ import ComparisonButton from '../components/comparison/ComparisonButton';
 import SEO from '../components/SEO';
 import api from '../config/api';
 import toast from 'react-hot-toast';
+import { generateItemListSchema, generateBreadcrumbSchema } from '../utils/structuredData';
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -65,7 +66,6 @@ const Products = () => {
     const storage = searchParams.get('storage');
     if (storage) newFilters.storage = storage.split(',');
     setFilters(newFilters);
-    setCurrentPage(1);
   }, [searchParams]);
 
   const { data: productsData, isLoading, error } = useQuery({
@@ -149,17 +149,41 @@ const Products = () => {
     filters[k] && (Array.isArray(filters[k]) ? filters[k].length > 0 : true)
   ).length;
 
+  // Generate SEO metadata based on current filters
+  const categoryName = categories.find(c => c.value === filters.category)?.label || '';
+  const brandName = Array.isArray(filters.brand) ? filters.brand.join(', ') : filters.brand || '';
+  
+  const pageTitle = categoryName || brandName || searchParams.get('search')
+    ? `${categoryName || brandName || searchParams.get('search')} - Produits | RYM GSM Nabeul`
+    : "Tous les Produits - Smartphones & Accessoires | RYM GSM Nabeul";
+  
+  const pageDescription = categoryName || brandName || searchParams.get('search')
+    ? `Découvrez notre sélection de ${categoryName || brandName || searchParams.get('search')} chez RYM GSM Nabeul. Prix compétitifs, livraison rapide en Tunisie, garantie officielle.`
+    : "Découvrez notre large sélection de smartphones, téléphones et accessoires en Tunisie. Samsung, iPhone, Xiaomi, OPPO, Honor. Meilleurs prix, livraison rapide, garantie officielle.";
+  
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Accueil", url: "https://rymgsm.com" },
+    { name: "Produits", url: "https://rymgsm.com/products" }
+  ]);
+  
+  const itemListSchema = products.length > 0 
+    ? generateItemListSchema(products, categoryName || "Produits")
+    : null;
+  
+  const structuredData = [breadcrumbSchema, itemListSchema].filter(Boolean);
+
   return (
     <>
       <SEO 
-        title="Produits - Téléphones & Smartphones"
-        description="Découvrez notre large sélection de téléphones et smartphones. Samsung, iPhone, Xiaomi, OPPO, accessoires et plus. Prix compétitifs, livraison rapide à Nabeul et toute la Tunisie."
-        keywords="téléphones, smartphones, Samsung, iPhone, Xiaomi, OPPO, accessoires mobile, Nabeul, Tunisie"
-        url="https://rymgsm.com/products"
+        title={pageTitle}
+        description={pageDescription}
+        keywords={`produits RYM GSM, smartphones Tunisie, téléphones Tunisie, ${categoryName || ''}, ${brandName || ''}, boutique mobile Tunisie, vente smartphone Nabeul, prix téléphone Tunisie`}
+        url={`https://rymgsm.com/products${searchParams.toString() ? '?' + searchParams.toString() : ''}`}
+        structuredData={structuredData}
       />
-      <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative overflow-hidden w-full">
+      <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
           <div className="absolute inset-0 opacity-30" 
             style={{
@@ -190,12 +214,12 @@ const Products = () => {
           </div>
 
           {/* Category Pills */}
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-8 animate-slide-in-up delay-300 max-w-full px-2">
+          <div className="flex flex-wrap justify-center gap-3 mt-8 animate-slide-in-up delay-300">
             {categories.map((cat) => (
               <button
                 key={cat.value}
                 onClick={() => handleFiltersChange({ ...filters, category: cat.value || undefined })}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 rounded-full font-medium transition-all duration-300 text-sm sm:text-base whitespace-nowrap ${
+                className={`flex items-center gap-2 px-5 py-3 rounded-full font-medium transition-all duration-300 ${
                   (filters.category || '') === cat.value
                     ? 'bg-white text-gray-900 shadow-lg scale-105'
                     : 'bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm'
@@ -210,10 +234,10 @@ const Products = () => {
       </section>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Toolbar */}
-        <div className="bg-white rounded-2xl shadow-sm p-3 sm:p-4 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 w-full">
-          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
@@ -236,7 +260,7 @@ const Products = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
             {/* Sort Dropdown */}
             <div className="relative">
               <select
@@ -279,9 +303,9 @@ const Products = () => {
           </div>
         </div>
 
-        <div className="flex gap-4 lg:gap-8 w-full">
+        <div className="flex gap-8">
           {/* Filters Sidebar */}
-          <div className={`transition-all duration-300 flex-shrink-0 ${showFilters ? 'w-full sm:w-80 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
+          <div className={`transition-all duration-300 ${showFilters ? 'w-80 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
             <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-gray-900">Filtres</h3>
@@ -302,7 +326,7 @@ const Products = () => {
           </div>
 
           {/* Products Grid */}
-          <div className="flex-1 min-w-0 w-full">
+          <div className="flex-1">
             {error ? (
               <div className="text-center py-20 bg-white rounded-2xl">
                 <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -359,8 +383,6 @@ const Products = () => {
                           <img
                             src={product.images?.[0] || '/placeholder.jpg'}
                             alt={product.name}
-                            loading="lazy"
-                            decoding="async"
                             className={`w-full object-contain p-4 group-hover:scale-110 transition-transform duration-500 ${
                               viewMode === 'list' ? 'h-48' : 'h-56'
                             }`}
