@@ -239,4 +239,48 @@ router.get('/debug', async (req, res) => {
   }
 });
 
+// GET /api/seed-reviews/test-insert - Test single review insert
+router.get('/test-insert', async (req, res) => {
+  try {
+    // Get first user and first product
+    const users = await query('SELECT id FROM users LIMIT 1');
+    const products = await query('SELECT id FROM products LIMIT 1');
+    
+    if (users.length === 0 || products.length === 0) {
+      return res.json({ error: 'No users or products found', users: users.length, products: products.length });
+    }
+    
+    const userId = users[0].id;
+    const productId = products[0].id;
+    
+    // Try to insert a test review
+    try {
+      const result = await query(
+        'INSERT INTO reviews (product_id, user_id, rating, comment, status) VALUES (?, ?, ?, ?, ?)',
+        [productId, userId, 5, 'Test review from seed script', 'approved']
+      );
+      
+      // Check if it was inserted
+      const check = await query('SELECT COUNT(*) as count FROM reviews');
+      
+      res.json({
+        success: true,
+        insertResult: result,
+        userId: userId,
+        productId: productId,
+        reviewCount: check[0].count
+      });
+    } catch (insertErr) {
+      res.json({
+        success: false,
+        error: insertErr.message,
+        userId: userId,
+        productId: productId
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Error testing insert', error: error.message });
+  }
+});
+
 module.exports = router;
