@@ -283,11 +283,17 @@ router.post('/', authenticateAdmin, async (req, res) => {
         // Create custom promotion message
         const promotionMessage = `${message}\n\n🏷️ ${product.brand} ${product.name}\n💰 ${originalPrice} Dt → ${newPrice} Dt\n💸 Save ${savings} Dt (${discountPercent}% off!)`;
         
-        // Create notifications for ALL users efficiently
-        await query(
-          'INSERT INTO notifications (user_id, type, title, message, data, created_at) SELECT id, ?, ?, ?, ?, NOW() FROM users',
-          ['promotion', `🎉 ${title}`, promotionMessage, JSON.stringify(enhancedData)]
-        );
+        // Create notifications for ALL users - get all user IDs first
+        const allUsers = await query('SELECT id FROM users');
+        const notifTitle = `🎉 ${title}`;
+        const notifData = JSON.stringify(enhancedData);
+        
+        for (const user of allUsers) {
+          await query(
+            'INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, ?, ?, ?, ?)',
+            [user.id, 'promotion', notifTitle, promotionMessage, notifData]
+          );
+        }
         
         console.log(`✅ Created promotion notifications for all users`);
         
@@ -301,27 +307,44 @@ router.post('/', authenticateAdmin, async (req, res) => {
         
       } else {
         // Regular promotion without specific product - create for all users
-        await query(
-          'INSERT INTO notifications (user_id, type, title, message, data, created_at) SELECT id, ?, ?, ?, ?, NOW() FROM users',
-          ['promotion', `🎉 ${title}`, message, JSON.stringify(data)]
-        );
+        const allUsers = await query('SELECT id FROM users');
+        const notifTitle = `🎉 ${title}`;
+        const notifData = JSON.stringify(data);
+        
+        for (const user of allUsers) {
+          await query(
+            'INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, ?, ?, ?, ?)',
+            [user.id, 'promotion', notifTitle, message, notifData]
+          );
+        }
         
         console.log(`✅ Created general promotion notifications for all users`);
       }
     } else if (type === 'system') {
       // Create system notification for all users
-      await query(
-        'INSERT INTO notifications (user_id, type, title, message, data, created_at) SELECT id, ?, ?, ?, ?, NOW() FROM users',
-        ['system', `📢 ${title}`, message, JSON.stringify(data)]
-      );
+      const allUsers = await query('SELECT id FROM users');
+      const notifTitle = `📢 ${title}`;
+      const notifData = JSON.stringify(data);
+      
+      for (const user of allUsers) {
+        await query(
+          'INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, ?, ?, ?, ?)',
+          [user.id, 'system', notifTitle, message, notifData]
+        );
+      }
       
       console.log(`✅ Created system notifications for all users`);
     } else {
       // Create notification for all users (for other notification types)
-      await query(
-        'INSERT INTO notifications (user_id, type, title, message, data, created_at) SELECT id, ?, ?, ?, ?, NOW() FROM users',
-        [type, title, message, JSON.stringify(data)]
-      );
+      const allUsers = await query('SELECT id FROM users');
+      const notifData = JSON.stringify(data);
+      
+      for (const user of allUsers) {
+        await query(
+          'INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, ?, ?, ?, ?)',
+          [user.id, type, title, message, notifData]
+        );
+      }
       
       console.log(`✅ Created ${type} notifications for all users`);
     }
