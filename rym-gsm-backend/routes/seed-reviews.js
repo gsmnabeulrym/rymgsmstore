@@ -78,35 +78,37 @@ router.post('/', async (req, res) => {
     let users = await query('SELECT id, name FROM users');
     console.log(`👥 Found ${users.length} existing users`);
 
-    // Create fake reviewer users if we don't have enough
+    // Create fake reviewer users - always create them with unique timestamps
     const minUsers = 20;
-    if (users.length < minUsers) {
-      console.log(`📝 Creating ${minUsers - users.length} fake reviewer users...`);
+    console.log(`📝 Creating ${minUsers} fake reviewer users...`);
+    
+    const timestamp = Date.now();
+    for (let i = 0; i < minUsers; i++) {
+      const name = reviewerNames[i % reviewerNames.length];
+      const email = `reviewer_${timestamp}_${i}@rymgsm.com`;
+      const password = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
       
-      for (let i = 0; i < minUsers; i++) {
-        const name = reviewerNames[i % reviewerNames.length];
-        const email = `reviewer_${i}_${Date.now()}@rymgsm.com`;
-        const password = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
-        
-        try {
-          const result = await query(
-            'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-            [name, email, password, 'user']
-          );
-          console.log(`✅ Created user: ${name} (ID: ${result.insertId})`);
-        } catch (err) {
-          console.log(`⚠️ Could not create user ${name}: ${err.message}`);
-        }
+      try {
+        await query(
+          'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+          [name, email, password, 'user']
+        );
+        console.log(`✅ Created user: ${name}`);
+      } catch (err) {
+        console.log(`⚠️ Could not create user ${name}: ${err.message}`);
       }
-      
-      // Refresh users list - get ALL users
-      users = await query('SELECT id, name FROM users');
-      console.log(`👥 Now have ${users.length} users for reviews`);
     }
     
-    // If still no users, return error
+    // Refresh users list - get ALL users
+    users = await query('SELECT id, name FROM users');
+    console.log(`👥 Now have ${users.length} users for reviews`);
+    
+    // If still no users, return error with details
     if (users.length === 0) {
-      return res.status(400).json({ message: 'No users available to create reviews. Please create users first.' });
+      return res.status(400).json({ 
+        message: 'No users available to create reviews. User creation failed.',
+        debug: { timestamp, minUsers }
+      });
     }
 
     // Check existing reviews
