@@ -4,6 +4,7 @@ import {
   Sparkles, CheckCircle, ArrowRight, Copy, ExternalLink
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import SEO from '../components/SEO';
 
 const Contact = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -11,6 +12,94 @@ const Contact = () => {
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  // FAQ Schema for Google "People also ask"
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Où se trouve RYM GSM Nabeul ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "RYM GSM est situé au 126, Avenue Habib Bourguiba, Nabeul 8000, Tunisie. Nous sommes facilement accessibles au centre-ville de Nabeul."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Quels sont les horaires d'ouverture de RYM GSM ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nous sommes ouverts du Lundi au Samedi de 9h00 à 19h00. Fermé le Dimanche."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Comment contacter RYM GSM Nabeul ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Vous pouvez nous contacter par téléphone au +216 26 419 140 ou +216 20 144 333, par email à gsmnabeulrym@gmail.com, ou via WhatsApp."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "RYM GSM propose-t-il la livraison en Tunisie ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui, nous proposons la livraison partout en Tunisie. Livraison rapide et sécurisée pour tous vos achats de téléphones et accessoires."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Quelles marques de téléphones sont disponibles chez RYM GSM ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nous proposons toutes les grandes marques : Samsung, iPhone (Apple), Xiaomi, OPPO, Huawei, Realme, et bien d'autres. Tous nos produits sont garantis."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "RYM GSM offre-t-il une garantie sur les téléphones ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui, tous nos téléphones sont vendus avec une garantie officielle. La durée de garantie varie selon le produit et la marque."
+        }
+      }
+    ]
+  };
+
+  // Local Business Schema
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "MobilePhoneStore",
+    "name": "RYM GSM Nabeul",
+    "image": "https://rymgsm.com/images/phones/rymgsmlogo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "126, Avenue Habib Bourguiba",
+      "addressLocality": "Nabeul",
+      "postalCode": "8000",
+      "addressCountry": "TN"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "36.456389",
+      "longitude": "10.735556"
+    },
+    "url": "https://rymgsm.com",
+    "telephone": "+216 26 419 140",
+    "email": "gsmnabeulrym@gmail.com",
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        "opens": "09:00",
+        "closes": "19:00"
+      }
+    ],
+    "priceRange": "$$"
+  };
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
@@ -64,7 +153,15 @@ const Contact = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50">
+    <>
+      <SEO 
+        title="Contact - RYM GSM Nabeul"
+        description="Contactez RYM GSM Nabeul - Votre boutique de téléphones en Tunisie. Adresse: 126 Avenue Habib Bourguiba, Nabeul. Tél: +216 26 419 140. Ouvert 9h-19h."
+        keywords="contact RYM GSM, téléphone Nabeul, boutique téléphone Tunisie, adresse RYM GSM, horaires RYM GSM"
+        url="https://rymgsm.com/contact"
+        structuredData={[faqSchema, localBusinessSchema]}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-primary-500 via-purple-600 to-pink-600 text-white py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
@@ -336,6 +433,7 @@ const Contact = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

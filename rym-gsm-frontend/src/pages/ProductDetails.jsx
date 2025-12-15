@@ -14,6 +14,7 @@ import ProductRating from '../components/ProductRating';
 import ProductImageGallery from '../components/ProductImageGallery';
 import WhatsAppProductInquiry from '../components/WhatsAppProductInquiry';
 import WishlistButton from '../components/WishlistButton';
+import SEO from '../components/SEO';
 import api from '../config/api';
 import toast from 'react-hot-toast';
 import ReviewList from '../components/ReviewList';
@@ -107,8 +108,77 @@ const ProductDetails = () => {
     network: <Wifi className="h-5 w-5" />
   };
 
+  // Product structured data for Google rich snippets
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "image": product.images?.[0] ? `https://rymgsm.com${product.images[0]}` : "https://rymgsm.com/images/phones/rymgsmlogo.png",
+    "description": product.description || `${product.name} - Disponible chez RYM GSM Nabeul. Livraison rapide en Tunisie.`,
+    "brand": {
+      "@type": "Brand",
+      "name": product.brand || "RYM GSM"
+    },
+    "sku": product.id?.toString(),
+    "offers": {
+      "@type": "Offer",
+      "url": `https://rymgsm.com/products/${product.id}`,
+      "priceCurrency": "TND",
+      "price": product.price,
+      "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "RYM GSM Nabeul"
+      }
+    },
+    "aggregateRating": product.rating ? {
+      "@type": "AggregateRating",
+      "ratingValue": product.rating,
+      "reviewCount": product.review_count || 1,
+      "bestRating": "5",
+      "worstRating": "1"
+    } : undefined
+  };
+
+  // Breadcrumb structured data
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Accueil",
+        "item": "https://rymgsm.com"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Produits",
+        "item": "https://rymgsm.com/products"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": product.name,
+        "item": `https://rymgsm.com/products/${product.id}`
+      }
+    ]
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <SEO 
+        title={`${product.name} - Acheter en Tunisie`}
+        description={`${product.name} disponible chez RYM GSM Nabeul. ${product.description?.substring(0, 120) || 'Meilleur prix en Tunisie, livraison rapide, garantie officielle.'}`}
+        keywords={`${product.name}, ${product.brand || ''}, acheter ${product.name}, ${product.name} Tunisie, ${product.name} prix, téléphone Nabeul`}
+        image={product.images?.[0] ? `https://rymgsm.com${product.images[0]}` : undefined}
+        url={`https://rymgsm.com/products/${product.id}`}
+        type="product"
+        structuredData={[productSchema, breadcrumbSchema]}
+      />
+      <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -386,6 +456,7 @@ const ProductDetails = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
