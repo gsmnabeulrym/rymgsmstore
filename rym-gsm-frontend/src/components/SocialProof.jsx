@@ -3,14 +3,14 @@ import { X, ShoppingBag, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const RECENT_PURCHASES = [
-  { name: 'Ahmed', location: 'Tunis', product: 'Samsung Galaxy A55', time: 'il y a 2 minutes' },
-  { name: 'Sarah', location: 'Nabeul', product: 'iPhone 15 Pro', time: 'il y a 5 minutes' },
-  { name: 'Mohamed', location: 'Sousse', product: 'Redmi Note 13', time: 'il y a 12 minutes' },
+  { name: 'Ahmed', location: 'Tunis', product: 'Samsung Galaxy A56 5G', time: 'il y a 2 minutes' },
+  { name: 'Sarah', location: 'Nabeul', product: 'PC Portable HP 15-fd1070nk Ultra 5 125H 16Go 512Go SSD', time: 'il y a 5 minutes' },
+  { name: 'Mohamed', location: 'Sousse', product: 'Redmi Note 14', time: 'il y a 12 minutes' },
   { name: 'Amira', location: 'Ariana', product: 'Infinix Hot 40', time: 'il y a 25 minutes' },
-  { name: 'Youssef', location: 'Sfax', product: 'OPPO Reno 11', time: 'il y a 40 minutes' },
-  { name: 'Mariem', location: 'Bizerte', product: 'Samsung Galaxy S24', time: 'il y a 1 heure' },
-  { name: 'Karim', location: 'Monastir', product: 'AirPods Pro', time: 'il y a 1 heure' },
-  { name: 'Salma', location: 'Hammamet', product: 'Galaxy Watch 6', time: 'il y a 2 heures' }
+  { name: 'Youssef', location: 'Sfax', product: 'OPPO Reno 14f', time: 'il y a 40 minutes' },
+  { name: 'Mariem', location: 'Bizerte', product: 'Samsung Galaxy S25 FE', time: 'il y a 1 heure' },
+  { name: 'Karim', location: 'Monastir', product: 'Xiaomi Sound Outdoor', time: 'il y a 1 heure' },
+  { name: 'Salma', location: 'Hammamet', product: 'Galaxy Watch 8', time: 'il y a 2 heures' }
 ];
 
 const SocialProof = () => {
