@@ -178,9 +178,9 @@ const Home = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="text-white space-y-8">
+            <div className="text-white space-y-8 min-h-[500px] md:min-h-[600px] flex flex-col justify-center">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full animate-slide-in-left">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full animate-slide-in-left w-fit">
                 <Sparkles className="h-4 w-4 text-yellow-300" />
                 <span className="text-sm font-medium">Nouveau Arrivage</span>
               </div>
