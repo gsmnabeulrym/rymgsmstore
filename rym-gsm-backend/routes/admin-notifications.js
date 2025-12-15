@@ -501,4 +501,44 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/notifications/debug-schema - Debug notifications table schema
+router.get('/debug-schema', async (req, res) => {
+  try {
+    // Check table columns
+    const columns = await query(`
+      SELECT column_name, data_type, is_nullable 
+      FROM information_schema.columns 
+      WHERE table_name = 'notifications'
+      ORDER BY ordinal_position
+    `);
+    
+    // Try a simple insert
+    const users = await query('SELECT id FROM users LIMIT 1');
+    let insertTest = null;
+    let insertError = null;
+    
+    if (users.length > 0) {
+      try {
+        await query(
+          'INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, ?, ?, ?, ?)',
+          [users[0].id, 'system', 'Test', 'Test message', '{}']
+        );
+        insertTest = 'success';
+        // Delete the test notification
+        await query("DELETE FROM notifications WHERE title = 'Test' AND message = 'Test message'");
+      } catch (e) {
+        insertError = e.message;
+      }
+    }
+    
+    res.json({
+      columns: columns,
+      insertTest: insertTest,
+      insertError: insertError
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
 module.exports = router;
