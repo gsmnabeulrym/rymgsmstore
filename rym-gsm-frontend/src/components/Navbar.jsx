@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
-import { Menu, X, ShoppingCart, User, Search, Phone, Laptop, Watch, Headphones, Heart } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, Search, Phone, Laptop, Watch, Headphones, Heart, Shield } from 'lucide-react';
 import Logo from './Logo';
 import EnhancedSearchBar from './EnhancedSearchBar';
 import NotificationBell from './NotificationBell';
@@ -23,10 +23,10 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white/95 backdrop-blur-lg shadow-lg sticky top-0 z-50 border-b border-primary-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
+          <Link to="/" className="flex items-center space-x-2 group flex-shrink-0">
             <Logo size="md" className="group-hover:scale-105 transition-transform duration-300" />
           </Link>
 
@@ -137,11 +137,25 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
+          {/* Mobile Actions */}
+          <div className="md:hidden flex items-center gap-2">
+            {/* Mobile Cart Icon */}
+            <Link
+              to="/cart"
+              className="relative text-gray-700 hover:text-primary-600 p-2.5 rounded-xl transition-all duration-300 hover:bg-primary-50"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-lg animate-pulse">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+            
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-700 hover:text-primary-600 p-3 rounded-xl transition-all duration-300 hover:bg-primary-50"
+              className="text-gray-700 hover:text-primary-600 p-2.5 rounded-xl transition-all duration-300 hover:bg-primary-50 active:scale-95"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -149,9 +163,9 @@ const Navbar = () => {
         </div>
 
         {/* Enhanced Search Bar - Mobile */}
-        <div className="md:hidden pb-4">
+        <div className="md:hidden pb-3 pt-2">
           <EnhancedSearchBar 
-            placeholder="Rechercher téléphones, marques ou catégories..."
+            placeholder="Rechercher..."
             className="w-full"
             onSearch={() => setIsMenuOpen(false)}
           />
@@ -160,44 +174,50 @@ const Navbar = () => {
 
       {/* Mobile Navigation Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-primary-100">
-          <div className="px-4 pt-4 pb-6 space-y-2">
+        <div className="md:hidden bg-gradient-to-b from-white to-gray-50 border-t border-primary-100 shadow-inner">
+          <div className="px-3 pt-3 pb-6 space-y-1.5">
             <Link
               to="/products"
-              className="block px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300"
+              className="flex items-center px-4 py-3.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md"
               onClick={() => setIsMenuOpen(false)}
             >
+              <Phone className="h-5 w-5 mr-3 text-primary-500" />
               Produits
             </Link>
             <Link
               to="/contact"
-              className="block px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300"
+              className="flex items-center px-4 py-3.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md"
               onClick={() => setIsMenuOpen(false)}
             >
+              <Phone className="h-5 w-5 mr-3 text-primary-500" />
               Contact
             </Link>
             <Link
               to="/wishlist"
-              className="flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300"
+              className="flex items-center justify-between px-4 py-3.5 text-gray-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md"
               onClick={() => setIsMenuOpen(false)}
             >
-              <Heart className="h-5 w-5 mr-3" />
-              Favoris
+              <div className="flex items-center">
+                <Heart className="h-5 w-5 mr-3 text-red-500" />
+                Favoris
+              </div>
               {wishlistCount > 0 && (
-                <span className="ml-3 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
+                <span className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg">
                   {wishlistCount}
                 </span>
               )}
             </Link>
             <Link
               to="/cart"
-              className="flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300"
+              className="flex items-center justify-between px-4 py-3.5 text-gray-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md"
               onClick={() => setIsMenuOpen(false)}
             >
-              <ShoppingCart className="h-5 w-5 mr-3" />
-              Panier
+              <div className="flex items-center">
+                <ShoppingCart className="h-5 w-5 mr-3 text-primary-500" />
+                Panier
+              </div>
               {cartCount > 0 && (
-                <span className="ml-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
+                <span className="bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg">
                   {cartCount}
                 </span>
               )}
@@ -205,52 +225,61 @@ const Navbar = () => {
 
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/profile"
-                  className="block px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Profil
-                </Link>
-                <Link
-                  to="/orders"
-                  className="block px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Mes Commandes
-                </Link>
+                <div className="pt-2 mt-2 border-t border-gray-200">
+                  <Link
+                    to="/profile"
+                    className="flex items-center px-4 py-3.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User className="h-5 w-5 mr-3 text-primary-500" />
+                    Profil
+                  </Link>
+                  <Link
+                    to="/orders"
+                    className="flex items-center px-4 py-3.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <ShoppingCart className="h-5 w-5 mr-3 text-primary-500" />
+                    Mes Commandes
+                  </Link>
+                </div>
                 {isAdmin && (
                   <Link
                     to="/admin"
-                    className="block px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300"
+                    className="flex items-center px-4 py-3.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md"
                     onClick={() => setIsMenuOpen(false)}
                   >
+                    <Shield className="h-5 w-5 mr-3 text-primary-500" />
                     Panneau Admin
                   </Link>
                 )}
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-xl text-base font-semibold transition-all duration-300"
+                  className="flex items-center w-full text-left px-4 py-3.5 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md mt-2"
                 >
+                  <X className="h-5 w-5 mr-3 text-red-500" />
                   Déconnexion
                 </button>
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className="block px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Connexion
-                </Link>
-                <Link
-                  to="/register"
-                  className="block px-4 py-3 btn-primary text-base font-semibold text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  S'inscrire
-                </Link>
+                <div className="pt-2 mt-2 border-t border-gray-200">
+                  <Link
+                    to="/login"
+                    className="flex items-center px-4 py-3.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-base font-semibold transition-all duration-300 active:scale-98 shadow-sm hover:shadow-md"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User className="h-5 w-5 mr-3 text-primary-500" />
+                    Connexion
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="flex items-center justify-center px-4 py-3.5 btn-primary text-base font-semibold text-center mt-2 shadow-lg hover:shadow-xl active:scale-98 transition-all duration-300"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    S'inscrire
+                  </Link>
+                </div>
               </>
             )}
           </div>

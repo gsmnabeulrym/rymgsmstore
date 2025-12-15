@@ -158,7 +158,7 @@ const Home = () => {
   return (
     <div className="min-h-screen overflow-hidden">
       {/* Hero Section - Modern Split Design */}
-      <section className="relative min-h-screen flex items-center">
+      <section className="relative min-h-screen flex items-center py-8 sm:py-0">
         {/* Animated Background */}
         <div className={`absolute inset-0 bg-gradient-to-br ${heroSlides[currentSlide].gradient} transition-all duration-1000`}>
           {/* Animated shapes */}
@@ -175,54 +175,54 @@ const Home = () => {
           ></div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Content */}
-            <div className="text-white space-y-6 h-[850px] md:h-[800px] flex flex-col justify-center">
+            <div className="text-white space-y-4 sm:space-y-6 h-auto lg:h-[800px] flex flex-col justify-center">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full animate-slide-in-left w-fit">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2.5 rounded-full animate-slide-in-left w-fit shadow-lg">
                 <Sparkles className="h-4 w-4 text-yellow-300" />
-                <span className="text-sm font-medium">Nouveau Arrivage</span>
+                <span className="text-xs sm:text-sm font-semibold">Nouveau Arrivage</span>
               </div>
 
               {/* Title */}
-              <div className="space-y-4">
-                <div className="h-[160px] md:h-[180px] flex items-end pb-2">
-                  <h1 key={`title-${currentSlide}`} className="text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="min-h-[120px] sm:h-[160px] md:h-[180px] flex items-end pb-2">
+                  <h1 key={`title-${currentSlide}`} className="text-3xl sm:text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100">
                     {heroSlides[currentSlide].title}
                   </h1>
                 </div>
-                <div className="h-[80px] flex items-start">
-                  <p key={`subtitle-${currentSlide}`} className="text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200">
+                <div className="min-h-[60px] sm:h-[80px] flex items-start">
+                  <p key={`subtitle-${currentSlide}`} className="text-base sm:text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200">
                     {heroSlides[currentSlide].subtitle}
                   </p>
                 </div>
               </div>
 
               {/* Price */}
-              <div className="animate-slide-in-left delay-300 h-[190px] md:h-[120px] flex items-center">
+              <div className="animate-slide-in-left delay-300 min-h-[140px] sm:h-[190px] md:h-[120px] flex items-center">
                 <div key={`price-${currentSlide}`} className="w-full">
                   {heroSlides[currentSlide].price4g ? (
-                    <div className="flex flex-wrap gap-4">
-                      <div className="glass px-6 py-4 rounded-2xl">
-                        <span className="text-sm text-white/70">4G</span>
-                        <div className="text-3xl font-bold">{heroSlides[currentSlide].price4g} <span className="text-lg">Dt</span></div>
+                    <div className="flex flex-wrap gap-3 sm:gap-4">
+                      <div className="glass px-5 sm:px-6 py-3 sm:py-4 rounded-2xl shadow-lg">
+                        <span className="text-xs sm:text-sm text-white/70 font-medium">4G</span>
+                        <div className="text-2xl sm:text-3xl font-bold">{heroSlides[currentSlide].price4g} <span className="text-base sm:text-lg">Dt</span></div>
                       </div>
-                      <div className="glass px-6 py-4 rounded-2xl border-2 border-yellow-400/50">
-                        <span className="text-sm text-yellow-300">5G</span>
-                        <div className="text-3xl font-bold">{heroSlides[currentSlide].price5g} <span className="text-lg">Dt</span></div>
+                      <div className="glass px-5 sm:px-6 py-3 sm:py-4 rounded-2xl border-2 border-yellow-400/50 shadow-lg">
+                        <span className="text-xs sm:text-sm text-yellow-300 font-medium">5G</span>
+                        <div className="text-2xl sm:text-3xl font-bold">{heroSlides[currentSlide].price5g} <span className="text-base sm:text-lg">Dt</span></div>
                       </div>
                     </div>
                   ) : (
-                    <div className="glass inline-block px-8 py-4 rounded-2xl">
-                      <span className="text-4xl font-bold">{heroSlides[currentSlide].price} <span className="text-xl">Dt</span></span>
+                    <div className="glass inline-block px-6 sm:px-8 py-3 sm:py-4 rounded-2xl shadow-lg">
+                      <span className="text-3xl sm:text-4xl font-bold">{heroSlides[currentSlide].price} <span className="text-lg sm:text-xl">Dt</span></span>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Features - Dynamic per phone */}
-              <div className="grid grid-cols-2 gap-4 animate-slide-in-left delay-500 h-[130px]">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 animate-slide-in-left delay-500 min-h-[100px] sm:h-[130px]">
                 {heroSlides[currentSlide].specs.map((spec, i) => {
                   const icons = {
                     wifi: <Wifi className="h-5 w-5" />,
@@ -231,24 +231,24 @@ const Home = () => {
                     cpu: <Cpu className="h-5 w-5" />
                   };
                   return (
-                    <div key={`${currentSlide}-spec-${i}`} className="flex items-center gap-3 text-white/80">
-                      <div className="p-2 bg-white/10 rounded-lg">{icons[spec.icon]}</div>
-                      <span>{spec.text}</span>
+                    <div key={`${currentSlide}-spec-${i}`} className="flex items-center gap-2 sm:gap-3 text-white/90">
+                      <div className="p-1.5 sm:p-2 bg-white/10 rounded-lg shadow-md">{icons[spec.icon]}</div>
+                      <span className="text-xs sm:text-sm font-medium">{spec.text}</span>
                     </div>
                   );
                 })}
               </div>
 
               {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-4 animate-slide-in-left delay-700">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 animate-slide-in-left delay-700">
                 <Link
                   to="/products"
-                  className="group bg-white text-gray-900 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl inline-flex items-center"
+                  className="group bg-white text-gray-900 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl inline-flex items-center justify-center shadow-lg active:scale-95"
                 >
                   Acheter Maintenant
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-2 transition-transform" />
                 </Link>
-                <button className="glass px-8 py-4 rounded-2xl font-bold text-lg hover:bg-white/20 transition-all duration-300 inline-flex items-center gap-2">
+                <button className="glass px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-white/20 transition-all duration-300 inline-flex items-center justify-center gap-2 shadow-lg active:scale-95">
                   <Play className="h-5 w-5" />
                   Voir Détails
                 </button>
@@ -256,20 +256,20 @@ const Home = () => {
             </div>
 
             {/* Right Content - Phone Display */}
-            <div className="relative flex justify-center items-center animate-slide-in-right h-[400px] md:h-[500px]">
+            <div className="relative flex justify-center items-center animate-slide-in-right h-[350px] sm:h-[400px] md:h-[500px] order-first lg:order-last">
               {/* Glowing ring */}
               <div className="absolute w-80 h-80 md:w-96 md:h-96 rounded-full border-4 border-white/20 animate-pulse"></div>
               <div className="absolute w-72 h-72 md:w-80 md:h-80 rounded-full border-2 border-white/10 animate-pulse delay-500"></div>
               
               {/* Phone Image */}
               <div className="relative z-10 animate-phone-float">
-                <div className="relative h-[300px] md:h-[400px] flex items-center justify-center">
+                <div className="relative h-[280px] sm:h-[300px] md:h-[400px] flex items-center justify-center">
                   <img 
                     src={heroSlides[currentSlide].image}
                     alt={heroSlides[currentSlide].title}
-                    className="w-auto h-full object-contain max-w-[280px] md:max-w-[350px]"
+                    className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
                     style={{ 
-                      filter: 'drop-shadow(0 25px 50px rgba(0,0,0,0.4))'
+                      filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))'
                     }}
                   />
                   {/* White glow behind phone */}
@@ -277,11 +277,11 @@ const Home = () => {
                 </div>
                 
                 {/* Floating badges */}
-                <div className="absolute -top-4 -right-4 bg-yellow-400 text-gray-900 px-4 py-2 rounded-full font-bold text-sm animate-bounce shadow-lg">
+                <div className="absolute -top-2 sm:-top-4 -right-2 sm:-right-4 bg-yellow-400 text-gray-900 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm animate-bounce shadow-lg">
                   🔥 HOT
                 </div>
-                <div className="absolute -bottom-4 -left-4 glass-dark text-white px-4 py-2 rounded-full font-medium text-sm flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-400" />
+                <div className="absolute -bottom-2 sm:-bottom-4 -left-2 sm:-left-4 glass-dark text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-lg">
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
                   En Stock
                 </div>
               </div>
@@ -289,12 +289,12 @@ const Home = () => {
           </div>
 
           {/* Slide Navigation */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+          <div className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-3 sm:gap-4">
             <button 
               onClick={prevSlide}
-              className="p-3 glass rounded-full hover:bg-white/20 transition-all"
+              className="p-2.5 sm:p-3 glass rounded-full hover:bg-white/20 transition-all active:scale-95 shadow-lg"
             >
-              <ChevronLeft className="h-5 w-5 text-white" />
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </button>
             
             <div className="flex gap-2">
@@ -302,10 +302,10 @@ const Home = () => {
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
+                  className={`h-2 rounded-full transition-all duration-300 shadow-md ${
                     index === currentSlide 
                       ? 'w-8 bg-white' 
-                      : 'w-2 bg-white/50 hover:bg-white/75'
+                      : 'w-2 bg-white/50 hover:bg-white/75 active:scale-95'
                   }`}
                 />
               ))}
@@ -313,9 +313,9 @@ const Home = () => {
             
             <button 
               onClick={nextSlide}
-              className="p-3 glass rounded-full hover:bg-white/20 transition-all"
+              className="p-2.5 sm:p-3 glass rounded-full hover:bg-white/20 transition-all active:scale-95 shadow-lg"
             >
-              <ChevronRight className="h-5 w-5 text-white" />
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </button>
           </div>
         </div>

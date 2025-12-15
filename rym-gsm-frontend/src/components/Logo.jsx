@@ -66,15 +66,23 @@ const Logo = ({ className = "", size = "md", showText = true, variant = "default
       
       {/* Logo Text - Optional */}
       {showText && (
-        <div className="hidden sm:block">
-          <div className={`font-black tracking-tight ${textSizeClasses[size]} ${
+        <div className="flex flex-col">
+          <div className={`font-black tracking-tight leading-tight ${
+            size === 'xs' || size === 'sm' ? 'text-sm sm:text-lg' :
+            size === 'md' ? 'text-base sm:text-xl' :
+            textSizeClasses[size]
+          } ${
             variant === 'light' 
               ? 'text-white drop-shadow-lg' 
               : 'bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient'
           }`}>
             RYM GSM
           </div>
-          <div className={`font-semibold tracking-widest uppercase ${subTextSizeClasses[size]} ${
+          <div className={`font-semibold tracking-widest uppercase leading-tight ${
+            size === 'xs' || size === 'sm' ? 'text-[10px] sm:text-xs' :
+            size === 'md' ? 'text-xs sm:text-sm' :
+            subTextSizeClasses[size]
+          } ${
             variant === 'light' 
               ? 'text-white/80' 
               : 'text-gray-500'
