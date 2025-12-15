@@ -208,15 +208,39 @@ router.get('/status', async (req, res) => {
   try {
     const reviewCount = await query('SELECT COUNT(*) as count FROM reviews');
     const productCount = await query('SELECT COUNT(*) as count FROM products');
+    const userCount = await query('SELECT COUNT(*) as count FROM users');
     const avgRating = await query('SELECT ROUND(AVG(rating), 2) as avg FROM reviews');
 
     res.json({
       totalReviews: parseInt(reviewCount[0].count),
       totalProducts: parseInt(productCount[0].count),
+      totalUsers: parseInt(userCount[0].count),
       averageRating: parseFloat(avgRating[0].avg) || 0
     });
   } catch (error) {
     res.status(500).json({ message: 'Error checking status', error: error.message });
+  }
+});
+
+// GET /api/seed-reviews/debug - Debug info
+router.get('/debug', async (req, res) => {
+  try {
+    const users = await query('SELECT id, name, email, role FROM users LIMIT 10');
+    const products = await query('SELECT id, name FROM products LIMIT 5');
+    const reviews = await query('SELECT id, product_id, user_id, rating FROM reviews LIMIT 5');
+    
+    res.json({
+      users: users,
+      products: products,
+      reviews: reviews,
+      counts: {
+        users: users.length,
+        products: products.length,
+        reviews: reviews.length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error debugging', error: error.message });
   }
 });
 
