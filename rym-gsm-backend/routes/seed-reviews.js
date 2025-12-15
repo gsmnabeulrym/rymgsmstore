@@ -124,23 +124,17 @@ router.post('/', async (req, res) => {
 
     // Generate reviews for each product
     let totalReviews = 0;
+    let errors = [];
+
+    // Shuffle users to get random assignment
+    const shuffledUsers = [...users].sort(() => Math.random() - 0.5);
 
     for (const product of products) {
-      // Random number of reviews per product (3-8)
-      const numReviews = Math.floor(Math.random() * 6) + 3;
-      const usedUserIds = new Set();
+      // Random number of reviews per product (3-7)
+      const numReviews = Math.floor(Math.random() * 5) + 3;
 
-      for (let i = 0; i < numReviews && i < users.length; i++) {
-        // Pick a random user that hasn't reviewed this product yet
-        let user;
-        let attempts = 0;
-        do {
-          user = users[Math.floor(Math.random() * users.length)];
-          attempts++;
-        } while (usedUserIds.has(user.id) && attempts < 20);
-
-        if (usedUserIds.has(user.id)) continue;
-        usedUserIds.add(user.id);
+      for (let i = 0; i < numReviews && i < shuffledUsers.length; i++) {
+        const user = shuffledUsers[i];
 
         // Generate rating (weighted towards positive)
         const ratingRoll = Math.random();
@@ -157,31 +151,27 @@ router.post('/', async (req, res) => {
           rating = 3;
           comment = averageComments[Math.floor(Math.random() * averageComments.length)];
         } else {
-          rating = Math.random() < 0.5 ? 2 : 4;
+          rating = 4;
           comment = goodComments[Math.floor(Math.random() * goodComments.length)];
         }
 
-        // Random date within last 6 months
-        const daysAgo = Math.floor(Math.random() * 180);
-        const reviewDate = new Date();
-        reviewDate.setDate(reviewDate.getDate() - daysAgo);
-
         try {
           await query(
-            `INSERT INTO reviews (product_id, user_id, rating, comment, status, created_at, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [product.id, user.id, rating, comment, 'approved', reviewDate.toISOString(), reviewDate.toISOString()]
+            `INSERT INTO reviews (product_id, user_id, rating, comment, status) VALUES (?, ?, ?, ?, ?)`,
+            [product.id, user.id, rating, comment, 'approved']
           );
           totalReviews++;
         } catch (err) {
-          console.log(`⚠️ Could not create review for product ${product.id}: ${err.message}`);
+          errors.push({ product: product.id, user: user.id, error: err.message });
+          console.log(`⚠️ Review error: ${err.message}`);
         }
       }
-
-      console.log(`  ✅ ${product.name}: ${usedUserIds.size} reviews added`);
     }
 
     console.log(`\n🎉 Successfully seeded ${totalReviews} reviews for ${products.length} products!`);
+    if (errors.length > 0) {
+      console.log(`⚠️ ${errors.length} errors occurred`);
+    }
 
     // Get summary
     const summary = await query(`
@@ -195,7 +185,10 @@ router.post('/', async (req, res) => {
       message: `Successfully seeded ${totalReviews} reviews for ${products.length} products`,
       stats: {
         totalReviews: parseInt(summary[0].total_reviews),
-        productsWithReviews: products.length
+        productsWithReviews: products.length,
+        usersCount: users.length,
+        errorsCount: errors.length,
+        sampleErrors: errors.slice(0, 5)
       }
     });
 
