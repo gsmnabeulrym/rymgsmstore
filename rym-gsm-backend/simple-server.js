@@ -1061,20 +1061,28 @@ app.get('/api/orders/admin/all', async (req, res) => {
   try {
     const { search, status, page = 1, limit = 10 } = req.query;
     
-    let sqlQuery = 'SELECT * FROM orders WHERE 1=1';
+    let sqlQuery = `
+      SELECT 
+        o.id, o.user_id, o.products, o.total, o.status, o.created_at, o.shipping_address,
+        COALESCE(u.name, 'Unknown') as user_name, 
+        COALESCE(u.email, 'No Email') as user_email 
+      FROM orders o 
+      LEFT JOIN users u ON o.user_id = u.id
+      WHERE 1=1
+    `;
     let countQuery = 'SELECT COUNT(*) as total FROM orders WHERE 1=1';
     const params = [];
     
     // Apply status filter
     if (status) {
-      sqlQuery += ' AND status = ?';
+      sqlQuery += ' AND o.status = ?';
       countQuery += ' AND status = ?';
       params.push(status);
     }
     
     // Apply search filter (search in order ID)
     if (search) {
-      sqlQuery += ' AND CAST(id AS TEXT) LIKE ?';
+      sqlQuery += ' AND CAST(o.id AS TEXT) LIKE ?';
       countQuery += ' AND CAST(id AS TEXT) LIKE ?';
       params.push(`%${search}%`);
     }
@@ -1085,7 +1093,7 @@ app.get('/api/orders/admin/all', async (req, res) => {
     
     // Add pagination and ordering
     const offset = (page - 1) * limit;
-    sqlQuery += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    sqlQuery += ' ORDER BY o.created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
     
     // Get orders
