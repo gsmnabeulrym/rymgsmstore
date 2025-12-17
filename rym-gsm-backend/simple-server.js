@@ -1280,6 +1280,8 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const isAdmin = req.user.role === 'admin';
     
+    console.log(`📦 GET /api/orders/${orderId} - User: ${userId}, isAdmin: ${isAdmin}`);
+    
     // Build query based on user role
     let sqlQuery = 'SELECT * FROM orders WHERE id = ?';
     let params = [orderId];
@@ -1290,9 +1292,17 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
       params.push(userId);
     }
     
+    console.log(`📦 Query: ${sqlQuery}, Params: ${JSON.stringify(params)}`);
+    
     const rows = await query(sqlQuery, params);
     
+    console.log(`📦 Rows found: ${rows.length}`);
+    
     if (rows.length === 0) {
+      // Check if order exists at all
+      const checkRows = await query('SELECT id, user_id FROM orders WHERE id = ?', [orderId]);
+      console.log(`📦 Order exists check: ${checkRows.length > 0 ? `Yes, user_id=${checkRows[0]?.user_id}` : 'No'}`);
+      
       return res.status(404).json({
         success: false,
         message: 'Order not found'
