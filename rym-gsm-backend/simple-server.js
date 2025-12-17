@@ -1303,6 +1303,15 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
       const checkRows = await query('SELECT id, user_id FROM orders WHERE id = ?', [orderId]);
       console.log(`📦 Order exists check: ${checkRows.length > 0 ? `Yes, user_id=${checkRows[0]?.user_id}` : 'No'}`);
       
+      // Also check with LEFT JOIN like admin list does
+      const checkWithJoin = await query(`
+        SELECT o.id, o.user_id, u.name as user_name 
+        FROM orders o 
+        LEFT JOIN users u ON o.user_id = u.id 
+        WHERE o.id = ?
+      `, [orderId]);
+      console.log(`📦 Order exists with JOIN: ${checkWithJoin.length > 0 ? `Yes, user_id=${checkWithJoin[0]?.user_id}, name=${checkWithJoin[0]?.user_name}` : 'No'}`);
+      
       return res.status(404).json({
         success: false,
         message: 'Order not found'
