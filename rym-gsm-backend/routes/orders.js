@@ -144,9 +144,12 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
     const { status, page = 1, limit = 10 } = req.query;
 
     let sqlQuery = `
-      SELECT o.*, u.name as user_name, u.email as user_email 
+      SELECT 
+        o.id, o.user_id, o.products, o.total, o.status, o.created_at, o.shipping_address,
+        COALESCE(u.name, 'Unknown') as user_name, 
+        COALESCE(u.email, 'No Email') as user_email 
       FROM orders o 
-      JOIN users u ON o.user_id = u.id
+      LEFT JOIN users u ON o.user_id = u.id
     `;
     const queryParams = [];
 
@@ -162,6 +165,16 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
     queryParams.push(parseInt(limit), offset);
 
     const orders = await query(sqlQuery, queryParams);
+    
+    // Debug log to check fetched data
+    if (orders.length > 0) {
+      console.log('🔍 First order raw data:', {
+        id: orders[0].id,
+        user_id: orders[0].user_id,
+        user_name: orders[0].user_name,
+        user_email: orders[0].user_email
+      });
+    }
 
     // Parse products JSON
     const formattedOrders = orders.map(order => ({

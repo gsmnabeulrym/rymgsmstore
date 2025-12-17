@@ -217,10 +217,10 @@ const AdminOrders = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {order.user_name}
+                            {order.user_name || `User #${order.user_id || 'Unknown'}`}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {order.user_email}
+                            {order.user_email || 'No email'}
                           </div>
                         </div>
                       </td>

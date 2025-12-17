@@ -303,7 +303,7 @@ const Products = () => {
           </div>
         </div>
 
-        <div className="flex gap-8">
+        <div className={`flex transition-all duration-300 ${showFilters ? 'gap-8' : ''}`}>
           {/* Filters Sidebar */}
           <div className={`transition-all duration-300 ${showFilters ? 'w-80 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
             <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-24">

@@ -423,9 +423,9 @@ const AdminProducts = () => {
                           <button
                             onClick={() => {
                               setEditingProduct(product);
-                              // Initialize edit form with existing images - load them into editUploadedImages so they can be removed
-                              setEditUploadedImages(product.images || []);
-                              setEditImageUrls('');
+                              // Initialize edit form with existing images
+                              setEditUploadedImages([]);
+                              setEditImageUrls(product.images?.join(', ') || '');
                             }}
                             className="text-yellow-600 hover:text-yellow-900 p-1"
                             title="Edit Product"

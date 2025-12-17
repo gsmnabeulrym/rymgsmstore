@@ -1,17 +1,49 @@
 # RYM GSM Nabeul - Robots.txt
-# Allow all search engines to crawl the site
+# Optimized for maximum search engine visibility in Tunisia
 
+# Allow all search engines to crawl the site
 User-agent: *
 Allow: /
 
-# Disallow admin and checkout pages from search engines
+# Disallow admin and private pages from search engines
 Disallow: /admin
 Disallow: /admin/*
 Disallow: /checkout
 Disallow: /cart
+Disallow: /profile
+Disallow: /orders
+Disallow: /wishlist
+Disallow: /notifications
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+
+# Allow important pages
+Allow: /products
+Allow: /products/*
+Allow: /contact
+Allow: /images/
+Allow: /assets/
 
 # Sitemap location
 Sitemap: https://rymgsm.com/sitemap.xml
 
-# Crawl-delay for polite crawling
+# Crawl-delay for polite crawling (fast indexing)
+Crawl-delay: 0.5
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Googlebot-Image
+Allow: /images/
+Allow: /products/
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Slurp
+Allow: /
 Crawl-delay: 1

@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { query } = require('../config/database');
+const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const notificationService = require('../services/notificationService');
 
@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
 
     // Search by name or description
     if (search) {
-      query += ' AND (LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))';
+      query += ' AND (name LIKE ? OR description LIKE ?)';
       queryParams.push(`%${search}%`, `%${search}%`);
     }
 
@@ -36,10 +36,10 @@ router.get('/', async (req, res) => {
     if (brand) {
       const brands = brand.split(',').map(b => b.trim());
       if (brands.length === 1) {
-        query += ' AND LOWER(brand) = LOWER(?)';
+        query += ' AND brand = ?';
         queryParams.push(brands[0]);
       } else {
-        query += ` AND LOWER(brand) IN (${brands.map(() => 'LOWER(?)').join(',')})`;
+        query += ` AND brand IN (${brands.map(() => '?').join(',')})`;
         queryParams.push(...brands);
       }
     }
@@ -124,25 +124,19 @@ router.get('/', async (req, res) => {
     query += ' LIMIT ? OFFSET ?';
     queryParams.push(parseInt(limit), offset);
 
-    const products = await query(query, queryParams);
+    const [products] = await pool.execute(query, queryParams);
 
     // Get total count for pagination
     let countQuery = 'SELECT COUNT(*) as total FROM products WHERE 1=1';
     const countParams = [];
 
     if (search) {
-      countQuery += ' AND (LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))';
+      countQuery += ' AND (name LIKE ? OR description LIKE ?)';
       countParams.push(`%${search}%`, `%${search}%`);
     }
     if (brand) {
-      const brands = brand.split(',').map(b => b.trim());
-      if (brands.length === 1) {
-        countQuery += ' AND LOWER(brand) = LOWER(?)';
-        countParams.push(brands[0]);
-      } else {
-        countQuery += ` AND LOWER(brand) IN (${brands.map(() => 'LOWER(?)').join(',')})`;
-        countParams.push(...brands);
-      }
+      countQuery += ' AND brand = ?';
+      countParams.push(brand);
     }
     if (category) {
       countQuery += ' AND category = ?';
@@ -165,14 +159,14 @@ router.get('/', async (req, res) => {
       countParams.push(storage);
     }
 
-    const countResult = await query(countQuery, countParams);
+    const [countResult] = await pool.execute(countQuery, countParams);
     const total = countResult[0].total;
 
-    // Parse JSON fields - handle both string (MySQL) and object (PostgreSQL JSONB)
+    // Parse JSON fields
     const formattedProducts = products.map(product => ({
       ...product,
-      images: typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []),
-      specs: typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {})
+      images: JSON.parse(product.images),
+      specs: JSON.parse(product.specs)
     }));
 
     res.json({
@@ -196,7 +190,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const products = await query(
+    const [products] = await pool.execute(
       'SELECT * FROM products WHERE id = ?',
       [id]
     );
@@ -206,8 +200,8 @@ router.get('/:id', async (req, res) => {
     }
 
     const product = products[0];
-    product.images = typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []);
-    product.specs = typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {});
+    product.images = JSON.parse(product.images);
+    product.specs = JSON.parse(product.specs);
 
     res.json({ product });
 
@@ -220,7 +214,7 @@ router.get('/:id', async (req, res) => {
 // Get unique brands for filter
 router.get('/brands/list', async (req, res) => {
   try {
-    const brands = await query(
+    const [brands] = await pool.execute(
       'SELECT DISTINCT brand FROM products ORDER BY brand'
     );
 
@@ -258,7 +252,7 @@ router.post('/', authenticateToken, requireAdmin, [
       ? parseInt(req.body.stock) 
       : 999;
 
-    const result = await query(
+    const [result] = await pool.execute(
       'INSERT INTO products (name, brand, price, stock, category, images, specs, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [name, brand, price, stock, category, JSON.stringify(images), JSON.stringify(specs), description || null]
     );
@@ -316,7 +310,7 @@ router.put('/:id', authenticateToken, requireAdmin, [
     const { name, brand, price, stock, category, images, specs, description } = req.body;
 
     // Check if product exists and get current values
-    const existingProducts = await query(
+    const [existingProducts] = await pool.execute(
       'SELECT id, name, price, stock FROM products WHERE id = ?',
       [id]
     );
@@ -370,7 +364,7 @@ router.put('/:id', authenticateToken, requireAdmin, [
 
     updateValues.push(id);
 
-    await query(
+    await pool.execute(
       `UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`,
       updateValues
     );
@@ -411,13 +405,12 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await query(
+    const [result] = await pool.execute(
       'DELETE FROM products WHERE id = ?',
       [id]
     );
 
-    const rowsAffected = result.rowCount || result.affectedRows || 0;
-    if (rowsAffected === 0) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
