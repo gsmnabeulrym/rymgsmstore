@@ -1309,7 +1309,16 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    let products = typeof rows[0].products === 'string' ? JSON.parse(rows[0].products || '[]') : (rows[0].products || []);
+    console.log(`📦 Order data type - products: ${typeof rows[0].products}`);
+    
+    let products = [];
+    try {
+      products = typeof rows[0].products === 'string' ? JSON.parse(rows[0].products || '[]') : (rows[0].products || []);
+      console.log(`📦 Products parsed successfully, count: ${products.length}`);
+    } catch (parseError) {
+      console.error(`📦 Error parsing products JSON:`, parseError.message);
+      products = [];
+    }
     
     // Fetch actual product images for products that don't have images stored
     for (let i = 0; i < products.length; i++) {
