@@ -1800,15 +1800,58 @@ if (fs.existsSync(frontendBuildPath)) {
             "@context": "https://schema.org",
             "@type": "Product",
             "name": productName,
-            "image": [imageUrl],
-            "description": productDesc,
+            "image": imageUrl,
+            "description": productDesc || `${productName} - Téléphone et accessoire disponible chez RYM GSM Nabeul, Tunisie. Prix compétitif, livraison rapide et garantie officielle.`,
             "brand": { "@type": "Brand", "name": product.brand || 'RYM GSM' },
+            "sku": `RYMGSM-${product.id}`,
+            "mpn": `RYMGSM-${product.id}`,
             "offers": {
               "@type": "Offer",
               "url": meta.canonical,
               "priceCurrency": "TND",
               "price": String(product.price),
-              "availability": (product.stock > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+              "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              "availability": (product.stock > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+              "itemCondition": "https://schema.org/NewCondition",
+              "seller": {
+                "@type": "Organization",
+                "name": "RYM GSM Nabeul"
+              },
+              "shippingDetails": {
+                "@type": "OfferShippingDetails",
+                "shippingRate": {
+                  "@type": "MonetaryAmount",
+                  "value": "7",
+                  "currency": "TND"
+                },
+                "shippingDestination": {
+                  "@type": "DefinedRegion",
+                  "addressCountry": "TN"
+                },
+                "deliveryTime": {
+                  "@type": "ShippingDeliveryTime",
+                  "handlingTime": {
+                    "@type": "QuantitativeValue",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "unitCode": "DAY"
+                  },
+                  "transitTime": {
+                    "@type": "QuantitativeValue",
+                    "minValue": 1,
+                    "maxValue": 3,
+                    "unitCode": "DAY"
+                  }
+                }
+              },
+              "hasMerchantReturnPolicy": {
+                "@type": "MerchantReturnPolicy",
+                "applicableCountry": "TN",
+                "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+                "merchantReturnDays": 7,
+                "returnMethod": "https://schema.org/ReturnByMail",
+                "returnFees": "https://schema.org/FreeReturn"
+              }
             }
           };
         }
