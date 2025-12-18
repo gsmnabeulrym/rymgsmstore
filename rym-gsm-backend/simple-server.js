@@ -1773,8 +1773,8 @@ if (fs.existsSync(frontendBuildPath)) {
       const isProductsRoute = req.path === '/products';
 
       let meta = {
-        title: 'RYM GSM Nabeul - Téléphones, Smartphones & Accessoires en Tunisie | Vente Mobile',
-        description: 'RYM GSM Nabeul - Votre boutique spécialisée en téléphones et smartphones en Tunisie. Samsung, iPhone, Xiaomi, OPPO. Prix compétitifs, livraison rapide, garantie officielle. Achetez votre téléphone maintenant!',
+        title: 'RYM GSM Nabeul | Téléphones Samsung, OPPO, Xiaomi, Redmi, Vivo, Honor, Infinix & Accessoires - Meilleur Prix Tunisie',
+        description: '🏆 RYM GSM Nabeul - N°1 des téléphones et smartphones en Tunisie! Samsung Galaxy, OPPO, Xiaomi, Redmi, Vivo, Honor, Infinix, montres connectées, écouteurs et tous accessoires. ✅ Prix imbattables ✅ Livraison rapide ✅ Garantie officielle. Magasin à Nabeul!',
         canonical: `${siteUrl}${isProductsRoute ? '/products' : (req.path === '/' ? '/' : req.path)}`
       };
 
