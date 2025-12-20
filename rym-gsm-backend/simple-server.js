@@ -1705,14 +1705,22 @@ app.get('/api/users/:id', async (req, res) => {
   }
 });
 
-// Serve static files from the React frontend build FIRST
+// Serve static files from the React frontend build
+// First try the public folder (for Render deployment), then fallback to dist folder (for local dev)
+const publicPath = path.join(__dirname, 'public');
 const frontendBuildPath = path.join(__dirname, '..', 'rym-gsm-frontend', 'dist');
-console.log('🔍 Checking for frontend build at:', frontendBuildPath);
-console.log('📂 Frontend build exists:', fs.existsSync(frontendBuildPath));
 
-if (fs.existsSync(frontendBuildPath)) {
-  app.use(express.static(frontendBuildPath));
-  console.log('📁 Serving frontend from:', frontendBuildPath);
+let servingPath = null;
+if (fs.existsSync(publicPath) && fs.readdirSync(publicPath).length > 0) {
+  servingPath = publicPath;
+  console.log('� Serving frontend from public folder:', publicPath);
+} else if (fs.existsSync(frontendBuildPath)) {
+  servingPath = frontendBuildPath;
+  console.log('📁 Serving frontend from dist folder:', frontendBuildPath);
+}
+
+if (servingPath) {
+  app.use(express.static(servingPath));
 }
 
 // Debug middleware to log ALL requests
@@ -1742,8 +1750,8 @@ app.use('/', sitemapRoutes); // Sitemap at root level /sitemap.xml
 console.log('🔗 Notification routes mounted at: /api/notifications');
 
 // Handle React routing - serve index.html for all non-API routes
-if (fs.existsSync(frontendBuildPath)) {
-  const indexHtmlPath = path.join(frontendBuildPath, 'index.html');
+if (servingPath) {
+  const indexHtmlPath = path.join(servingPath, 'index.html');
   let indexHtmlCache = null;
 
   const escapeHtml = (str) => {
