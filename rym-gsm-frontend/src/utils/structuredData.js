@@ -80,14 +80,36 @@ export const generateWebSiteSchema = () => {
   };
 };
 
+// Helper function to get valid image URL (skip base64 data URLs)
+const getValidImageUrl = (img) => {
+  if (!img || typeof img !== 'string' || img.trim() === '') {
+    return "https://www.rymgsm.com/images/phones/rymgsmlogo.png";
+  }
+  // Skip base64 data URLs - not valid for structured data
+  if (img.startsWith('data:')) {
+    return "https://www.rymgsm.com/images/phones/rymgsmlogo.png";
+  }
+  // Already a full URL
+  if (img.startsWith('http')) {
+    return img;
+  }
+  // Relative path - prepend site URL
+  return `https://www.rymgsm.com${img.startsWith('/') ? '' : '/'}${img}`;
+};
+
 export const generateProductSchema = (product) => {
   if (!product) return null;
   
   const images = Array.isArray(product.images) 
-    ? product.images.map(img => `https://rymgsm.com${img}`)
+    ? product.images.map(img => getValidImageUrl(img)).filter(img => img !== null)
     : product.images 
-      ? [`https://rymgsm.com${product.images}`]
-      : ["https://rymgsm.com/images/phones/rymgsmlogo.png"];
+      ? [getValidImageUrl(product.images)]
+      : ["https://www.rymgsm.com/images/phones/rymgsmlogo.png"];
+  
+  // Ensure we always have at least one valid image
+  if (images.length === 0) {
+    images.push("https://www.rymgsm.com/images/phones/rymgsmlogo.png");
+  }
 
   const schema = {
     "@context": "https://schema.org",
@@ -224,9 +246,7 @@ export const generateItemListSchema = (products, listName = "Produits") => {
         "@type": "Product",
         "name": product.name,
         "url": `https://rymgsm.com/products/${product.id}`,
-        "image": product.images?.[0] 
-          ? `https://rymgsm.com${product.images[0]}` 
-          : "https://rymgsm.com/images/phones/rymgsmlogo.png",
+        "image": getValidImageUrl(product.images?.[0]),
         "offers": {
           "@type": "Offer",
           "priceCurrency": "TND",
