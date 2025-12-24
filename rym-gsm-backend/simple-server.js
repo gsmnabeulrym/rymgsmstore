@@ -1802,10 +1802,18 @@ if (servingPath) {
           } catch (e) {
             images = [];
           }
-          // Ensure imageUrl is always a valid string URL, never an array or object
+          // Ensure imageUrl is always a valid HTTP/HTTPS URL, never base64 or array
           let imageUrl = `${siteUrl}/images/phones/rymgsmlogo.png`;
           if (images.length > 0 && typeof images[0] === 'string' && images[0].trim() !== '') {
-            imageUrl = images[0].startsWith('http') ? images[0] : `${siteUrl}${images[0].startsWith('/') ? '' : '/'}${images[0]}`;
+            const img = images[0];
+            // Skip base64 data URLs - they are not valid for structured data
+            if (img.startsWith('data:')) {
+              imageUrl = `${siteUrl}/images/phones/rymgsmlogo.png`;
+            } else if (img.startsWith('http')) {
+              imageUrl = img;
+            } else {
+              imageUrl = `${siteUrl}${img.startsWith('/') ? '' : '/'}${img}`;
+            }
           }
 
           meta = {
