@@ -1795,8 +1795,18 @@ if (servingPath) {
           const product = rows[0];
           const productName = `${product.brand || ''} ${product.name || ''}`.trim();
           const productDesc = product.description || `${productName} disponible à Nabeul, Tunisie. Prix compétitif, livraison rapide et garantie.`;
-          const images = typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []);
-          const imageUrl = images && images.length > 0 ? images[0] : `${siteUrl}/images/phones/rymgsmlogo.png`;
+          let images = [];
+          try {
+            images = typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []);
+            if (!Array.isArray(images)) images = [];
+          } catch (e) {
+            images = [];
+          }
+          // Ensure imageUrl is always a valid string URL, never an array or object
+          let imageUrl = `${siteUrl}/images/phones/rymgsmlogo.png`;
+          if (images.length > 0 && typeof images[0] === 'string' && images[0].trim() !== '') {
+            imageUrl = images[0].startsWith('http') ? images[0] : `${siteUrl}${images[0].startsWith('/') ? '' : '/'}${images[0]}`;
+          }
 
           meta = {
             title: `${productName} Prix Tunisie | RYM GSM Nabeul`,
