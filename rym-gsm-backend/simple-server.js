@@ -1895,9 +1895,8 @@ if (servingPath) {
 
       if (jsonLd) {
         const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`;
-        if (!/application\/ld\+json/.test(html)) {
-          html = html.replace(/<\/head>/i, `  ${jsonLdScript}\n  </head>`);
-        }
+        // Always inject product JSON-LD before </head>, even if other JSON-LD exists
+        html = html.replace(/<\/head>/i, `  ${jsonLdScript}\n  </head>`);
       }
 
       res.type('text/html').send(html);
