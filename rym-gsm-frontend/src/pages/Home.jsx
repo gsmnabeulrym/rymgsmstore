@@ -5,8 +5,7 @@ import {
   Star, ArrowRight, ShoppingCart, Eye, Heart, 
   Shield, Truck, Phone, Headphones, Zap, 
   CheckCircle, Users, Award, Sparkles, Gift,
-  Clock, ChevronLeft, ChevronRight, Play,
-  Smartphone, Cpu, Battery, Camera, Wifi
+  Clock, Smartphone
 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import ProductRating from '../components/ProductRating';
@@ -20,7 +19,6 @@ import {
 } from '../utils/structuredData';
 
 const Home = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState({});
   const { addToCart } = useCart();
 
@@ -35,71 +33,6 @@ const Home = () => {
     select: (data) => data.products
   });
 
-  // Fetch slider products (mix of phones and accessories, no laptops, diverse brands, PNG images preferred)
-  const { data: sliderProducts, isLoading: sliderLoading } = useQuery({
-    queryKey: ['slider-products'],
-    queryFn: () => api.get('/products?limit=100').then(res => res.data),
-    select: (data) => {
-      const products = data.products || [];
-      
-      // Helper to check if product has PNG image (transparent background)
-      const hasPngImage = (p) => {
-        if (!p.images) return false;
-        const images = Array.isArray(p.images) ? p.images : 
-          (typeof p.images === 'string' ? JSON.parse(p.images || '[]') : []);
-        if (images.length === 0) return false;
-        const firstImage = images[0] || '';
-        return firstImage.includes('image/png') || firstImage.toLowerCase().endsWith('.png');
-      };
-      
-      // Exclude laptops
-      const noLaptops = products.filter(p => {
-        const name = (p.name || '').toLowerCase();
-        const cat = (p.category || '').toLowerCase();
-        return !name.includes('laptop') && !name.includes('ordinateur') && !cat.includes('laptop');
-      });
-      
-      // Filter products with PNG images first (transparent backgrounds)
-      const pngProducts = noLaptops.filter(hasPngImage);
-      
-      // Get unique brands from PNG products
-      const brandMap = new Map();
-      pngProducts.forEach(p => {
-        const brand = (p.brand || 'Other').toLowerCase();
-        if (!brandMap.has(brand)) {
-          brandMap.set(brand, p);
-        }
-      });
-      
-      // Convert to array and take up to 5 products from different brands
-      const diverseProducts = Array.from(brandMap.values()).slice(0, 5);
-      
-      // If we don't have 5 PNG products, fill with remaining PNG products
-      if (diverseProducts.length < 5) {
-        const usedIds = new Set(diverseProducts.map(p => p.id));
-        for (const p of pngProducts) {
-          if (!usedIds.has(p.id) && diverseProducts.length < 5) {
-            diverseProducts.push(p);
-            usedIds.add(p.id);
-          }
-        }
-      }
-      
-      // If still not enough, fall back to non-PNG products
-      if (diverseProducts.length < 5) {
-        const usedIds = new Set(diverseProducts.map(p => p.id));
-        for (const p of noLaptops) {
-          if (!usedIds.has(p.id) && diverseProducts.length < 5) {
-            diverseProducts.push(p);
-            usedIds.add(p.id);
-          }
-        }
-      }
-      
-      return diverseProducts;
-    }
-  });
-
   // Generate ItemList schema for featured products
   const itemListSchema = featuredProducts 
     ? generateItemListSchema(featuredProducts, "Produits en vedette")
@@ -111,15 +44,6 @@ const Home = () => {
     websiteSchema,
     ...(itemListSchema ? [itemListSchema] : [])
   ].filter(Boolean);
-
-  // Auto-rotate hero slides
-  useEffect(() => {
-    const slidesCount = sliderProducts?.length || 1;
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slidesCount);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [sliderProducts]);
 
   // Intersection Observer for scroll animations
   useEffect(() => {
@@ -140,117 +64,6 @@ const Home = () => {
 
     return () => observer.disconnect();
   }, []);
-
-  // Gradient colors for slides
-  const gradients = [
-    "from-pink-600 via-rose-500 to-orange-400",
-    "from-cyan-600 via-teal-500 to-emerald-400",
-    "from-violet-600 via-purple-500 to-indigo-400",
-    "from-blue-600 via-indigo-500 to-purple-400",
-    "from-emerald-600 via-teal-500 to-cyan-400"
-  ];
-
-  // Parse product specs from description or specs field
-  const parseProductSpecs = (product) => {
-    const specs = [];
-    const desc = (product.description || '').toLowerCase();
-    const productSpecs = typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {});
-    
-    // Network
-    if (desc.includes('5g') || productSpecs.network?.includes('5G')) {
-      specs.push({ icon: "wifi", text: "5G" });
-    } else if (desc.includes('4g') || desc.includes('lte')) {
-      specs.push({ icon: "wifi", text: "4G LTE" });
-    }
-    
-    // Battery
-    const batteryMatch = desc.match(/(\d{4,5})\s*mah/i);
-    if (batteryMatch) {
-      specs.push({ icon: "battery", text: `${batteryMatch[1]}mAh` });
-    } else if (productSpecs.battery) {
-      specs.push({ icon: "battery", text: productSpecs.battery });
-    }
-    
-    // Camera
-    const cameraMatch = desc.match(/(\d+)\s*mp/i);
-    if (cameraMatch) {
-      specs.push({ icon: "camera", text: `${cameraMatch[1]}MP` });
-    } else if (productSpecs.camera) {
-      specs.push({ icon: "camera", text: productSpecs.camera });
-    }
-    
-    // Storage/RAM
-    const storageMatch = desc.match(/(\d+)\s*go?\s*[+\/]\s*(\d+)\s*go?/i) || desc.match(/(\d+)\s*gb?\s*[+\/]\s*(\d+)\s*gb?/i);
-    if (storageMatch) {
-      specs.push({ icon: "cpu", text: `${storageMatch[1]}GB + ${storageMatch[2]}GB` });
-    } else if (productSpecs.ram && productSpecs.storage) {
-      specs.push({ icon: "cpu", text: `${productSpecs.ram} + ${productSpecs.storage}` });
-    }
-    
-    // Default specs if none found
-    if (specs.length === 0) {
-      specs.push({ icon: "wifi", text: "4G LTE" });
-      specs.push({ icon: "battery", text: "Grande autonomie" });
-      specs.push({ icon: "camera", text: "Caméra HD" });
-      specs.push({ icon: "cpu", text: "Performance" });
-    }
-    
-    // Ensure we have 4 specs
-    while (specs.length < 4) {
-      const defaults = [
-        { icon: "wifi", text: "Connectivité" },
-        { icon: "battery", text: "Longue durée" },
-        { icon: "camera", text: "Photo HD" },
-        { icon: "cpu", text: "Rapide" }
-      ];
-      specs.push(defaults[specs.length]);
-    }
-    
-    return specs.slice(0, 4);
-  };
-
-  // Get valid image URL for slider (allow base64 images)
-  const getSliderImage = (product) => {
-    if (!product.images) return '/images/phones/rymgsmlogo.png';
-    const images = Array.isArray(product.images) ? product.images : 
-      (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : []);
-    // Return the first image if available (including base64)
-    if (images.length > 0 && images[0]) {
-      return images[0];
-    }
-    return '/images/phones/rymgsmlogo.png';
-  };
-
-  // Build hero slides from real products
-  const heroSlides = sliderProducts?.length > 0 
-    ? sliderProducts.map((product, index) => ({
-        id: product.id,
-        title: product.name,
-        subtitle: product.description?.substring(0, 60) + '...' || `${product.brand} - Disponible chez RYM GSM`,
-        price: product.price?.toString() || '0',
-        image: getSliderImage(product),
-        gradient: gradients[index % gradients.length],
-        specs: parseProductSpecs(product),
-        brand: product.brand,
-        isLoading: false
-      }))
-    : [
-        {
-          id: 0,
-          title: sliderLoading ? "Chargement..." : "Découvrez nos Smartphones",
-          subtitle: sliderLoading ? "Veuillez patienter" : "Les meilleures marques aux meilleurs prix",
-          price: sliderLoading ? "" : "À partir de 299",
-          image: "/images/phones/rymgsmlogo.png",
-          gradient: "from-primary-600 via-indigo-500 to-purple-400",
-          specs: [
-            { icon: "wifi", text: "4G/5G" },
-            { icon: "battery", text: "Grande autonomie" },
-            { icon: "camera", text: "Caméras HD" },
-            { icon: "cpu", text: "Performance" }
-          ],
-          isLoading: sliderLoading
-        }
-      ];
 
   const brands = [
     { name: "Samsung", logo: "🔷" },
@@ -305,12 +118,6 @@ const Home = () => {
     }
   };
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % (heroSlides?.length || 1));
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + (heroSlides?.length || 1)) % (heroSlides?.length || 1));
-
-  // Current slide data with safety check
-  const currentSlideData = heroSlides[currentSlide] || heroSlides[0];
-
   return (
     <>
       <SEO 
@@ -321,169 +128,6 @@ const Home = () => {
         structuredData={allStructuredData}
       />
       <div className="min-h-screen overflow-hidden">
-      {/* Hero Section - Modern Split Design */}
-      <section className="relative min-h-screen flex items-center py-8 sm:py-0">
-        {/* Animated Background */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData.gradient} transition-all duration-1000`}>
-          {/* Animated shapes */}
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-blob"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-blob delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/5 rounded-full blur-2xl animate-pulse"></div>
-          
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 opacity-10" 
-            style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
-              backgroundSize: '40px 40px'
-            }}
-          ></div>
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left Content */}
-            <div className="text-white space-y-4 sm:space-y-6 h-auto lg:h-[800px] flex flex-col justify-center">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2.5 rounded-full animate-slide-in-left w-fit shadow-lg">
-                <Sparkles className="h-4 w-4 text-yellow-300" />
-                <span className="text-xs sm:text-sm font-semibold">Nouveau Arrivage</span>
-              </div>
-
-              {/* Title */}
-              <div className="space-y-3 sm:space-y-4">
-                <div className="min-h-[120px] sm:h-[160px] md:h-[180px] flex items-end pb-2">
-                  <h1 key={`title-${currentSlide}`} className="text-3xl sm:text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100">
-                    {currentSlideData.title}
-                  </h1>
-                </div>
-                <div className="min-h-[60px] sm:h-[80px] flex items-start">
-                  <p key={`subtitle-${currentSlide}`} className="text-base sm:text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200">
-                    {currentSlideData.subtitle}
-                  </p>
-                </div>
-              </div>
-
-              {/* Price */}
-              <div className="animate-slide-in-left delay-300 min-h-[140px] sm:h-[190px] md:h-[120px] flex items-center">
-                <div key={`price-${currentSlide}`} className="w-full">
-                  <div className="glass inline-block px-6 sm:px-8 py-3 sm:py-4 rounded-2xl shadow-lg">
-                    <span className="text-3xl sm:text-4xl font-bold">{currentSlideData.price} <span className="text-lg sm:text-xl">Dt</span></span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Features - Dynamic per phone */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 animate-slide-in-left delay-500 min-h-[100px] sm:h-[130px]">
-                {currentSlideData.specs.map((spec, i) => {
-                  const icons = {
-                    wifi: <Wifi className="h-5 w-5" />,
-                    battery: <Battery className="h-5 w-5" />,
-                    camera: <Camera className="h-5 w-5" />,
-                    cpu: <Cpu className="h-5 w-5" />
-                  };
-                  return (
-                    <div key={`${currentSlide}-spec-${i}`} className="flex items-center gap-2 sm:gap-3 text-white/90">
-                      <div className="p-1.5 sm:p-2 bg-white/10 rounded-lg shadow-md">{icons[spec.icon]}</div>
-                      <span className="text-xs sm:text-sm font-medium">{spec.text}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 animate-slide-in-left delay-700">
-                <Link
-                  to={currentSlideData.id ? `/products/${currentSlideData.id}` : '/products'}
-                  className="group bg-white text-gray-900 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl inline-flex items-center justify-center shadow-lg active:scale-95"
-                >
-                  Acheter Maintenant
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-2 transition-transform" />
-                </Link>
-                <Link 
-                  to={currentSlideData.id ? `/products/${currentSlideData.id}` : '/products'}
-                  className="glass px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-white/20 transition-all duration-300 inline-flex items-center justify-center gap-2 shadow-lg active:scale-95"
-                >
-                  <Eye className="h-5 w-5" />
-                  Voir Détails
-                </Link>
-              </div>
-            </div>
-
-            {/* Right Content - Phone Display */}
-            <div className="relative flex justify-center items-center animate-slide-in-right h-[350px] sm:h-[400px] md:h-[500px] order-first lg:order-last">
-              {/* Glowing ring */}
-              <div className="absolute w-80 h-80 md:w-96 md:h-96 rounded-full border-4 border-white/20 animate-pulse"></div>
-              <div className="absolute w-72 h-72 md:w-80 md:h-80 rounded-full border-2 border-white/10 animate-pulse delay-500"></div>
-              
-              {/* Phone Image */}
-              <div className="relative z-10 animate-phone-float">
-                <div className="relative h-[280px] sm:h-[300px] md:h-[400px] flex items-center justify-center">
-                  {currentSlideData.isLoading ? (
-                    <div className="flex flex-col items-center justify-center gap-4">
-                      <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      <span className="text-white/70 text-sm">Chargement des produits...</span>
-                    </div>
-                  ) : (
-                    <img 
-                      src={currentSlideData.image}
-                      alt={currentSlideData.title}
-                      loading="eager"
-                      decoding="async"
-                      className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
-                      style={{ 
-                        filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))'
-                      }}
-                    />
-                  )}
-                  {/* White glow behind phone */}
-                  <div className="absolute inset-0 -z-10 bg-white/20 blur-3xl rounded-full scale-75"></div>
-                </div>
-                
-                {/* Floating badges */}
-                <div className="absolute -top-2 sm:-top-4 -right-2 sm:-right-4 bg-yellow-400 text-gray-900 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm animate-bounce shadow-lg">
-                  🔥 HOT
-                </div>
-                <div className="absolute -bottom-2 sm:-bottom-4 -left-2 sm:-left-4 glass-dark text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-lg">
-                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
-                  En Stock
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Slide Navigation */}
-          <div className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-3 sm:gap-4">
-            <button 
-              onClick={prevSlide}
-              className="p-2.5 sm:p-3 glass rounded-full hover:bg-white/20 transition-all active:scale-95 shadow-lg"
-            >
-              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            </button>
-            
-            <div className="flex gap-2">
-              {heroSlides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`h-2 rounded-full transition-all duration-300 shadow-md ${
-                    index === currentSlide 
-                      ? 'w-8 bg-white' 
-                      : 'w-2 bg-white/50 hover:bg-white/75 active:scale-95'
-                  }`}
-                />
-              ))}
-            </div>
-            
-            <button 
-              onClick={nextSlide}
-              className="p-2.5 sm:p-3 glass rounded-full hover:bg-white/20 transition-all active:scale-95 shadow-lg"
-            >
-              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* Brands Marquee */}
       <section className="py-8 bg-gray-900 overflow-hidden">
         <div className="flex animate-marquee whitespace-nowrap">
