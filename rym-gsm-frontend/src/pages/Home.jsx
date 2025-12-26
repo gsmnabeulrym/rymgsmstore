@@ -398,7 +398,9 @@ const Home = () => {
                     decoding="async"
                     className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
                     style={{ 
-                      filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))'
+                      filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))',
+                      mixBlendMode: 'multiply',
+                      backgroundColor: 'transparent'
                     }}
                   />
                   {/* White glow behind phone */}
