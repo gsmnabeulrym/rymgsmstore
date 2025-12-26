@@ -35,9 +35,9 @@ const Home = () => {
     select: (data) => data.products
   });
 
-  // Fetch slider products - top products with images
+  // Fetch premium slider products
   const { data: sliderProducts, isLoading: sliderLoading } = useQuery({
-    queryKey: ['slider-products'],
+    queryKey: ['premium-slider-products'],
     queryFn: () => api.get('/products?limit=50').then(res => res.data),
     select: (data) => {
       const products = data.products || [];
@@ -57,7 +57,7 @@ const Home = () => {
         return !name.includes('laptop') && !name.includes('ordinateur') && !cat.includes('laptop');
       });
       
-      // Get diverse brands
+      // Get diverse brands for premium showcase
       const brandMap = new Map();
       noLaptops.forEach(p => {
         const brand = (p.brand || 'Other').toLowerCase();
@@ -66,14 +66,14 @@ const Home = () => {
         }
       });
       
-      // Take up to 6 products from different brands
-      const diverseProducts = Array.from(brandMap.values()).slice(0, 6);
+      // Take up to 5 products from different brands
+      const diverseProducts = Array.from(brandMap.values()).slice(0, 5);
       
       // Fill with more products if needed
-      if (diverseProducts.length < 6) {
+      if (diverseProducts.length < 5) {
         const usedIds = new Set(diverseProducts.map(p => p.id));
         for (const p of noLaptops) {
-          if (!usedIds.has(p.id) && diverseProducts.length < 6) {
+          if (!usedIds.has(p.id) && diverseProducts.length < 5) {
             diverseProducts.push(p);
             usedIds.add(p.id);
           }
@@ -83,6 +83,9 @@ const Home = () => {
       return diverseProducts;
     }
   });
+
+  // Slider state for premium experience
+  const [isPaused, setIsPaused] = useState(false);
 
   // Generate ItemList schema for featured products
   const itemListSchema = featuredProducts 
@@ -96,14 +99,14 @@ const Home = () => {
     ...(itemListSchema ? [itemListSchema] : [])
   ].filter(Boolean);
 
-  // Auto-rotate hero slides
+  // Premium auto-rotate with pause functionality
   useEffect(() => {
-    if (!sliderProducts || sliderProducts.length === 0) return;
+    if (!sliderProducts || sliderProducts.length === 0 || isPaused) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % sliderProducts.length);
-    }, 6000);
+    }, 5000);
     return () => clearInterval(interval);
-  }, [sliderProducts]);
+  }, [sliderProducts, isPaused]);
 
   // Intersection Observer for scroll animations
   useEffect(() => {
@@ -125,14 +128,13 @@ const Home = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Modern gradient colors for slides
-  const gradients = [
-    "from-purple-600 via-pink-500 to-rose-500",
-    "from-blue-600 via-cyan-500 to-teal-500",
-    "from-indigo-600 via-purple-500 to-pink-500",
-    "from-emerald-600 via-green-500 to-teal-500",
-    "from-orange-600 via-red-500 to-pink-500",
-    "from-cyan-600 via-blue-500 to-indigo-500"
+  // Premium cinematic gradients
+  const premiumGradients = [
+    { bg: "from-[#0A0E27] via-[#1a1f3a] to-[#0f1629]", accent: "from-[#00D4FF] to-[#7B2FF7]" },
+    { bg: "from-[#0f0c29] via-[#302b63] to-[#24243e]", accent: "from-[#FF6B9D] to-[#FEC163]" },
+    { bg: "from-[#0f2027] via-[#203a43] to-[#2c5364]", accent: "from-[#00F5FF] to-[#00D4FF]" },
+    { bg: "from-[#1e1e2e] via-[#2d1b69] to-[#1e1e2e]", accent: "from-[#A855F7] to-[#EC4899]" },
+    { bg: "from-[#141e30] via-[#243b55] to-[#141e30]", accent: "from-[#06B6D4] to-[#3B82F6]" }
   ];
 
   // Parse product specs from description or specs field
@@ -194,28 +196,29 @@ const Home = () => {
     return specs.slice(0, 4);
   };
 
-  // Get valid image URL for slider
-  const getSliderImage = (product) => {
+  // Get valid image URL for premium slider
+  const getPremiumSliderImage = (product) => {
     if (!product?.images) return null;
     const images = Array.isArray(product.images) ? product.images : 
       (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : []);
     return images.length > 0 && images[0] ? images[0] : null;
   };
 
-  // Build hero slides from real products
+  // Build premium hero slides
   const heroSlides = sliderProducts?.length > 0 
     ? sliderProducts
-        .filter(product => getSliderImage(product) !== null)
+        .filter(product => getPremiumSliderImage(product) !== null)
         .map((product, index) => ({
           id: product.id,
           title: product.name,
-          subtitle: product.description?.substring(0, 80) || `${product.brand} - Disponible maintenant`,
+          tagline: product.description?.substring(0, 100) || `Découvrez le ${product.brand} - Innovation et Performance`,
           price: product.price?.toString() || '0',
-          image: getSliderImage(product),
-          gradient: gradients[index % gradients.length],
+          image: getPremiumSliderImage(product),
+          gradient: premiumGradients[index % premiumGradients.length],
           specs: parseProductSpecs(product),
           brand: product.brand,
-          category: product.category
+          category: product.category,
+          discount: product.discount || null
         }))
     : [];
 
@@ -297,202 +300,236 @@ const Home = () => {
         structuredData={allStructuredData}
       />
       <div className="min-h-screen overflow-hidden">
-      {/* Hero Section - Ultimate Modern Design */}
+      {/* Premium Hero Slider - Legendary Design */}
       {sliderLoading ? (
-        <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-rose-500">
+        <section className="relative min-h-[600px] flex items-center justify-center bg-gradient-to-br from-[#0A0E27] via-[#1a1f3a] to-[#0f1629]">
           <div className="text-center text-white">
-            <div className="w-20 h-20 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-6"></div>
-            <p className="text-2xl font-bold">Chargement des produits...</p>
+            <div className="w-24 h-24 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-6 shadow-[0_0_30px_rgba(0,212,255,0.5)]"></div>
+            <p className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Chargement de l'expérience premium...</p>
           </div>
         </section>
       ) : heroSlides.length === 0 ? (
-        <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <section className="relative min-h-[600px] flex items-center justify-center bg-gradient-to-br from-[#0A0E27] via-[#1a1f3a] to-[#0f1629]">
           <div className="text-center text-white px-4">
-            <Smartphone className="w-24 h-24 mx-auto mb-6 opacity-50" />
-            <h2 className="text-4xl font-bold mb-4">Produits bientôt disponibles</h2>
-            <p className="text-xl text-white/70">Revenez plus tard pour découvrir nos offres</p>
+            <Smartphone className="w-24 h-24 mx-auto mb-6 opacity-50 text-cyan-400" />
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Collection Premium Bientôt Disponible</h2>
+            <p className="text-xl text-white/70">Revenez découvrir nos produits d'exception</p>
           </div>
         </section>
       ) : (
-      <section className="relative min-h-screen flex items-center py-8 sm:py-0">
-        {/* Animated Background */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData?.gradient || gradients[0]} transition-all duration-1000`}>
-          {/* Animated shapes */}
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-blob"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-blob delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/5 rounded-full blur-2xl animate-pulse"></div>
+      <section 
+        className="relative w-full min-h-[600px] flex items-center overflow-hidden"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        {/* Cinematic Animated Background */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData?.gradient?.bg || premiumGradients[0].bg} transition-all duration-1000`}>
+          {/* Floating particles */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute top-[10%] left-[15%] w-2 h-2 bg-cyan-400 rounded-full animate-float-particle opacity-60"></div>
+            <div className="absolute top-[30%] right-[20%] w-3 h-3 bg-purple-400 rounded-full animate-float-particle-slow opacity-40" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-[20%] left-[25%] w-2 h-2 bg-pink-400 rounded-full animate-float-particle opacity-50" style={{animationDelay: '2s'}}></div>
+            <div className="absolute top-[60%] right-[30%] w-2 h-2 bg-cyan-300 rounded-full animate-float-particle-slow opacity-60" style={{animationDelay: '0.5s'}}></div>
+          </div>
           
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 opacity-10" 
+          {/* Gradient orbs */}
+          <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-gradient-to-br from-cyan-500/20 to-transparent rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-0 right-0 w-[700px] h-[700px] bg-gradient-to-tl from-purple-500/20 to-transparent rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1s'}}></div>
+          
+          {/* Subtle grid */}
+          <div className="absolute inset-0 opacity-5" 
             style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
-              backgroundSize: '40px 40px'
+              backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+              backgroundSize: '50px 50px'
             }}
           ></div>
+          
+          {/* Spotlight effect */}
+          <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/40"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left Content */}
-            <div className="text-white space-y-4 sm:space-y-6 h-auto lg:h-[800px] flex flex-col justify-center">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2.5 rounded-full animate-slide-in-left w-fit shadow-lg">
-                <Sparkles className="h-4 w-4 text-yellow-300" />
-                <span className="text-xs sm:text-sm font-semibold">Nouveau Arrivage</span>
+            {/* Left Content - Premium Layout */}
+            <div className="text-white space-y-6 sm:space-y-8 order-last lg:order-first">
+              {/* Brand Logo */}
+              <div key={`brand-${currentSlide}`} className="animate-fade-in-up">
+                <span className="text-sm font-bold tracking-widest uppercase text-white/60">{currentSlideData?.brand || 'RYM GSM'}</span>
               </div>
 
-              {/* Brand Badge */}
-              {currentSlideData?.brand && (
-                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-5 py-2 rounded-full animate-slide-in-left w-fit border border-white/20">
-                  <span className="text-sm font-bold">{currentSlideData.brand}</span>
-                  {currentSlideData.category && (
-                    <>
-                      <span className="text-white/50">•</span>
-                      <span className="text-xs text-white/80">{currentSlideData.category}</span>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Title */}
-              <div className="space-y-3 sm:space-y-4">
-                <div className="min-h-[120px] sm:h-[160px] md:h-[180px] flex items-end pb-2">
-                  <h1 key={`title-${currentSlide}`} className="text-3xl sm:text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100 drop-shadow-2xl">
-                    {currentSlideData?.title || ''}
-                  </h1>
-                </div>
-                <div className="min-h-[60px] sm:h-[80px] flex items-start">
-                  <p key={`subtitle-${currentSlide}`} className="text-base sm:text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200">
-                    {currentSlideData?.subtitle || ''}
-                  </p>
-                </div>
+              {/* Product Name - Gradient Text */}
+              <div key={`name-${currentSlide}`} className="animate-slide-in-left delay-100">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.1] bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} bg-clip-text text-transparent drop-shadow-2xl">
+                  {currentSlideData?.title || ''}
+                </h1>
               </div>
 
-              {/* Price */}
-              <div className="animate-slide-in-left delay-300 min-h-[140px] sm:h-[190px] md:h-[120px] flex items-center">
-                <div key={`price-${currentSlide}`} className="w-full">
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-white/20 blur-xl rounded-3xl"></div>
-                    <div className="relative glass-dark px-8 sm:px-10 py-4 sm:py-5 rounded-3xl shadow-2xl border border-white/20">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-4xl sm:text-5xl font-black">{currentSlideData?.price || '0'}</span>
-                        <span className="text-xl sm:text-2xl font-bold text-white/80">Dt</span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-white/60 mt-1">Prix TTC</p>
-                    </div>
-                  </div>
-                </div>
+              {/* Tagline */}
+              <div key={`tagline-${currentSlide}`} className="animate-fade-in-up delay-200">
+                <p className="text-lg sm:text-xl text-white/80 font-medium max-w-xl">
+                  {currentSlideData?.tagline || ''}
+                </p>
               </div>
 
-              {/* Specs - Dynamic per phone */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 animate-slide-in-left delay-500 min-h-[100px] sm:h-[130px]">
+              {/* Key Specs - Icon Format */}
+              <div key={`specs-${currentSlide}`} className="grid grid-cols-2 gap-4 animate-fade-in-up delay-300 max-w-lg">
                 {currentSlideData?.specs?.map((spec, i) => {
                   const icons = {
-                    wifi: <Wifi className="h-5 w-5" />,
-                    battery: <Battery className="h-5 w-5" />,
-                    camera: <Camera className="h-5 w-5" />,
-                    cpu: <Cpu className="h-5 w-5" />
+                    wifi: <Wifi className="h-6 w-6" />,
+                    battery: <Battery className="h-6 w-6" />,
+                    camera: <Camera className="h-6 w-6" />,
+                    cpu: <Cpu className="h-6 w-6" />
                   };
                   return (
-                    <div key={`${currentSlide}-spec-${i}`} className="group flex items-center gap-2 sm:gap-3 glass-dark px-4 py-3 rounded-xl hover:bg-white/20 transition-all duration-300 border border-white/10">
-                      <div className="p-2 bg-white/10 rounded-lg group-hover:scale-110 transition-transform">{icons[spec.icon]}</div>
-                      <span className="text-xs sm:text-sm font-semibold">{spec.text}</span>
+                    <div 
+                      key={`${currentSlide}-spec-${i}`} 
+                      className="group flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105"
+                      style={{animationDelay: `${300 + i * 100}ms`}}
+                    >
+                      <div className="p-2.5 bg-gradient-to-br ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} rounded-xl group-hover:scale-110 transition-transform shadow-lg">
+                        {icons[spec.icon]}
+                      </div>
+                      <span className="text-sm font-semibold text-white/90">{spec.text}</span>
                     </div>
                   );
                 }) || []}
               </div>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 animate-slide-in-left delay-700">
+              {/* Price with Badge */}
+              <div key={`price-${currentSlide}`} className="flex items-center gap-4 animate-fade-in-up delay-500">
+                <div className="relative">
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} blur-2xl opacity-50 rounded-3xl"></div>
+                  {/* Price container */}
+                  <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 px-8 py-4 rounded-3xl shadow-2xl">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl sm:text-6xl font-black bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} bg-clip-text text-transparent">
+                        {currentSlideData?.price || '0'}
+                      </span>
+                      <span className="text-2xl font-bold text-white/80">DT</span>
+                    </div>
+                    <p className="text-xs text-white/50 mt-1 uppercase tracking-wide">Prix TTC</p>
+                  </div>
+                </div>
+                {/* Discount badge if available */}
+                {currentSlideData?.discount && (
+                  <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-2xl font-black text-sm animate-wiggle shadow-xl">
+                    -{currentSlideData.discount}%
+                  </div>
+                )}
+              </div>
+
+              {/* CTA Buttons - Premium Style */}
+              <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up delay-700">
                 <Link
                   to={currentSlideData?.id ? `/products/${currentSlideData.id}` : '/products'}
-                  className="group relative bg-white text-gray-900 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl font-black text-base sm:text-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center shadow-2xl active:scale-95 overflow-hidden"
+                  className="group relative px-10 py-5 rounded-2xl font-black text-lg overflow-hidden shadow-2xl hover:shadow-[0_0_40px_rgba(0,212,255,0.6)] transition-all duration-300 hover:scale-105 active:scale-95"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <span className="relative z-10 group-hover:text-white transition-colors">Acheter Maintenant</span>
-                  <ArrowRight className="relative z-10 ml-2 h-5 w-5 group-hover:translate-x-2 transition-transform group-hover:text-white" />
+                  {/* Gradient background */}
+                  <div className="absolute inset-0 bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent}"></div>
+                  {/* Shine effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                  {/* Content */}
+                  <span className="relative z-10 flex items-center justify-center gap-2 text-white">
+                    Acheter Maintenant
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform" />
+                  </span>
                 </Link>
                 <Link 
                   to={currentSlideData?.id ? `/products/${currentSlideData.id}` : '/products'}
-                  className="glass-dark border border-white/20 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl font-bold text-base sm:text-lg hover:bg-white/20 transition-all duration-300 inline-flex items-center justify-center gap-2 shadow-xl active:scale-95"
+                  className="group px-10 py-5 rounded-2xl font-bold text-lg bg-white/5 backdrop-blur-md border-2 border-white/20 hover:bg-white/10 hover:border-white/30 transition-all duration-300 flex items-center justify-center gap-2 text-white shadow-xl active:scale-95"
                 >
                   <Eye className="h-5 w-5" />
-                  Voir Détails
+                  En Savoir Plus
                 </Link>
               </div>
             </div>
 
-            {/* Right Content - Product Display */}
-            <div className="relative flex justify-center items-center animate-slide-in-right h-[350px] sm:h-[400px] md:h-[500px] lg:h-[600px] order-first lg:order-last">
-              {/* 3D Glowing rings */}
-              <div className="absolute w-[300px] h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] rounded-full border-4 border-white/20 animate-spin-slow"></div>
-              <div className="absolute w-[250px] h-[250px] md:w-[350px] md:h-[350px] lg:w-[450px] lg:h-[450px] rounded-full border-2 border-white/10 animate-spin-slow-reverse"></div>
-              <div className="absolute w-[200px] h-[200px] md:w-[300px] md:h-[300px] lg:w-[400px] lg:h-[400px] rounded-full bg-white/5 blur-2xl animate-pulse"></div>
+            {/* Right Content - Cinematic Product Display */}
+            <div className="relative flex justify-center items-center h-[400px] sm:h-[500px] lg:h-[600px] order-first lg:order-last">
+              {/* Rotating rings with gradient */}
+              <div className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] lg:w-[550px] lg:h-[550px] rounded-full border-[3px] border-transparent bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} opacity-20 animate-spin-slow" style={{maskImage: 'linear-gradient(transparent 40%, black 60%)'}}></div>
+              <div className="absolute w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] lg:w-[500px] lg:h-[500px] rounded-full border-[2px] border-white/10 animate-spin-slow-reverse"></div>
               
-              {/* Product Image */}
-              <div className="relative z-10 animate-phone-float">
-                <div className="relative h-[280px] sm:h-[320px] md:h-[420px] lg:h-[500px] flex items-center justify-center">
+              {/* Glow orb behind product */}
+              <div className="absolute w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] bg-gradient-to-br ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} opacity-30 blur-[80px] rounded-full animate-pulse-slow"></div>
+              
+              {/* Product Image with levitation effect */}
+              <div key={`product-${currentSlide}`} className="relative z-10 animate-levitate">
+                <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] flex items-center justify-center">
                   <img 
-                    key={`img-${currentSlide}`}
                     src={currentSlideData?.image || ''}
                     alt={currentSlideData?.title || 'Product'}
                     loading="eager"
                     decoding="async"
-                    className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px] lg:max-w-[420px] animate-fade-in"
+                    className="w-auto h-full object-contain max-w-[250px] sm:max-w-[350px] lg:max-w-[450px] animate-zoom-in"
                     style={{ 
-                      filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.5))'
+                      filter: 'drop-shadow(0 40px 80px rgba(0,0,0,0.6))'
                     }}
                   />
-                  {/* Enhanced glow */}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/30 via-white/10 to-transparent blur-3xl rounded-full scale-90"></div>
+                  {/* Spotlight effect */}
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-white/20 via-transparent to-transparent blur-2xl scale-110"></div>
                 </div>
                 
-                {/* Animated badges */}
-                <div className="absolute -top-4 -right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-4 py-2 rounded-2xl font-black text-sm animate-bounce shadow-2xl border-2 border-white/50">
-                  <span className="flex items-center gap-1">
-                    <Sparkles className="h-4 w-4" />
-                    NOUVEAU
+                {/* Premium badges */}
+                <div className="absolute -top-6 -right-6 bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-[0_0_30px_rgba(251,191,36,0.6)] animate-pulse-badge border-2 border-white/30">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 animate-spin-slow" />
+                    NEW
                   </span>
                 </div>
-                <div className="absolute -bottom-4 -left-4 glass-dark text-white px-4 py-2 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-2xl border border-white/20 backdrop-blur-xl">
-                  <CheckCircle className="h-4 w-4 text-green-400" />
+                <div className="absolute -bottom-6 -left-6 bg-gradient-to-br from-green-400 to-emerald-500 text-white px-5 py-2.5 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-[0_0_30px_rgba(34,197,94,0.6)] border-2 border-white/30">
+                  <CheckCircle className="h-5 w-5" />
                   En Stock
                 </div>
-                <div className="absolute top-1/2 -right-8 glass-dark text-white px-3 py-2 rounded-xl font-semibold text-xs shadow-xl border border-white/20 backdrop-blur-xl animate-pulse">
-                  ⚡ Livraison 24h
+                <div className="absolute top-1/2 -translate-y-1/2 -right-10 bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-2xl border border-white/30 backdrop-blur-xl animate-pulse-slow">
+                  <span className="flex items-center gap-1.5">
+                    <Zap className="h-4 w-4" />
+                    24h
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Enhanced Slide Navigation */}
-          <div className="absolute bottom-8 sm:bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-4 sm:gap-6">
+          {/* Premium Navigation Controls */}
+          <div className="absolute bottom-8 sm:bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-6">
+            {/* Previous button */}
             <button 
               onClick={prevSlide}
-              className="group p-3 sm:p-4 glass-dark border border-white/20 rounded-2xl hover:bg-white/20 transition-all active:scale-95 shadow-2xl backdrop-blur-xl"
+              aria-label="Previous slide"
+              className="group relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20 hover:scale-110 transition-all duration-300 active:scale-95 shadow-2xl overflow-hidden"
             >
-              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <ChevronLeft className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-white group-hover:scale-110 transition-transform" />
             </button>
             
-            <div className="flex gap-3 glass-dark px-4 py-3 rounded-2xl border border-white/20 backdrop-blur-xl shadow-2xl">
+            {/* Line indicators */}
+            <div className="flex gap-2 bg-white/5 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10 shadow-2xl">
               {heroSlides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`h-2.5 rounded-full transition-all duration-500 ${
+                  aria-label={`Go to slide ${index + 1}`}
+                  className="relative group"
+                >
+                  <div className={`h-1 rounded-full transition-all duration-500 ${
                     index === currentSlide 
-                      ? 'w-10 bg-white shadow-lg' 
-                      : 'w-2.5 bg-white/40 hover:bg-white/70 hover:w-6 active:scale-95'
-                  }`}
-                />
+                      ? 'w-12 bg-gradient-to-r from-cyan-400 to-purple-400 shadow-[0_0_10px_rgba(0,212,255,0.8)]' 
+                      : 'w-8 bg-white/30 hover:bg-white/50 group-hover:w-10'
+                  }`}></div>
+                </button>
               ))}
             </div>
             
+            {/* Next button */}
             <button 
               onClick={nextSlide}
-              className="group p-3 sm:p-4 glass-dark border border-white/20 rounded-2xl hover:bg-white/20 transition-all active:scale-95 shadow-2xl backdrop-blur-xl"
+              aria-label="Next slide"
+              className="group relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20 hover:scale-110 transition-all duration-300 active:scale-95 shadow-2xl overflow-hidden"
             >
-              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <ChevronRight className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-white group-hover:scale-110 transition-transform" />
             </button>
           </div>
         </div>
