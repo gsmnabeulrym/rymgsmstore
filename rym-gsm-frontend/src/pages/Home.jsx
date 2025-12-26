@@ -35,32 +35,36 @@ const Home = () => {
     select: (data) => data.products
   });
 
-  // Fetch slider products (mix of phones and accessories, no laptops, diverse brands)
+  // Fetch slider products (mix of phones and accessories, no laptops, diverse brands, PNG images preferred)
   const { data: sliderProducts } = useQuery({
     queryKey: ['slider-products'],
     queryFn: () => api.get('/products?limit=100').then(res => res.data),
     select: (data) => {
       const products = data.products || [];
       
-      // Helper to check if product has any valid image
-      const hasValidImage = (p) => {
+      // Helper to check if product has PNG image (transparent background)
+      const hasPngImage = (p) => {
         if (!p.images) return false;
         const images = Array.isArray(p.images) ? p.images : 
           (typeof p.images === 'string' ? JSON.parse(p.images || '[]') : []);
-        return images.length > 0 && images[0] && images[0].length > 0;
+        if (images.length === 0) return false;
+        const firstImage = images[0] || '';
+        return firstImage.includes('image/png') || firstImage.toLowerCase().endsWith('.png');
       };
       
-      // Exclude laptops and products without images
-      const validProducts = products.filter(p => {
+      // Exclude laptops
+      const noLaptops = products.filter(p => {
         const name = (p.name || '').toLowerCase();
         const cat = (p.category || '').toLowerCase();
-        const noLaptop = !name.includes('laptop') && !name.includes('ordinateur') && !cat.includes('laptop');
-        return noLaptop && hasValidImage(p);
+        return !name.includes('laptop') && !name.includes('ordinateur') && !cat.includes('laptop');
       });
       
-      // Get unique brands
+      // Filter products with PNG images first (transparent backgrounds)
+      const pngProducts = noLaptops.filter(hasPngImage);
+      
+      // Get unique brands from PNG products
       const brandMap = new Map();
-      validProducts.forEach(p => {
+      pngProducts.forEach(p => {
         const brand = (p.brand || 'Other').toLowerCase();
         if (!brandMap.has(brand)) {
           brandMap.set(brand, p);
@@ -70,10 +74,21 @@ const Home = () => {
       // Convert to array and take up to 5 products from different brands
       const diverseProducts = Array.from(brandMap.values()).slice(0, 5);
       
-      // If we don't have 5 products from different brands, fill with more products
+      // If we don't have 5 PNG products, fill with remaining PNG products
       if (diverseProducts.length < 5) {
         const usedIds = new Set(diverseProducts.map(p => p.id));
-        for (const p of validProducts) {
+        for (const p of pngProducts) {
+          if (!usedIds.has(p.id) && diverseProducts.length < 5) {
+            diverseProducts.push(p);
+            usedIds.add(p.id);
+          }
+        }
+      }
+      
+      // If still not enough, fall back to non-PNG products
+      if (diverseProducts.length < 5) {
+        const usedIds = new Set(diverseProducts.map(p => p.id));
+        for (const p of noLaptops) {
           if (!usedIds.has(p.id) && diverseProducts.length < 5) {
             diverseProducts.push(p);
             usedIds.add(p.id);
@@ -196,31 +211,44 @@ const Home = () => {
 
   // Get valid image URL for slider (allow base64 images)
   const getSliderImage = (product) => {
-    if (!product.images) return null;
+    if (!product.images) return '/images/phones/rymgsmlogo.png';
     const images = Array.isArray(product.images) ? product.images : 
       (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : []);
     // Return the first image if available (including base64)
     if (images.length > 0 && images[0]) {
       return images[0];
     }
-    return null;
+    return '/images/phones/rymgsmlogo.png';
   };
 
-  // Build hero slides from real products - only include products with valid images
+  // Build hero slides from real products
   const heroSlides = sliderProducts?.length > 0 
-    ? sliderProducts
-        .filter(product => getSliderImage(product) !== null)
-        .map((product, index) => ({
-          id: product.id,
-          title: product.name,
-          subtitle: product.description?.substring(0, 60) + '...' || `${product.brand} - Disponible chez RYM GSM`,
-          price: product.price?.toString() || '0',
-          image: getSliderImage(product),
-          gradient: gradients[index % gradients.length],
-          specs: parseProductSpecs(product),
-          brand: product.brand
-        }))
-    : [];
+    ? sliderProducts.map((product, index) => ({
+        id: product.id,
+        title: product.name,
+        subtitle: product.description?.substring(0, 60) + '...' || `${product.brand} - Disponible chez RYM GSM`,
+        price: product.price?.toString() || '0',
+        image: getSliderImage(product),
+        gradient: gradients[index % gradients.length],
+        specs: parseProductSpecs(product),
+        brand: product.brand
+      }))
+    : [
+        {
+          id: 0,
+          title: "Découvrez nos Smartphones",
+          subtitle: "Les meilleures marques aux meilleurs prix",
+          price: "À partir de 299",
+          image: "/images/phones/rymgsmlogo.png",
+          gradient: "from-primary-600 via-indigo-500 to-purple-400",
+          specs: [
+            { icon: "wifi", text: "4G/5G" },
+            { icon: "battery", text: "Grande autonomie" },
+            { icon: "camera", text: "Caméras HD" },
+            { icon: "cpu", text: "Performance" }
+          ]
+        }
+      ];
 
   const brands = [
     { name: "Samsung", logo: "🔷" },
@@ -291,8 +319,7 @@ const Home = () => {
         structuredData={allStructuredData}
       />
       <div className="min-h-screen overflow-hidden">
-      {/* Hero Section - Modern Split Design - Only show when we have products with images */}
-      {heroSlides.length > 0 && currentSlideData && (
+      {/* Hero Section - Modern Split Design */}
       <section className="relative min-h-screen flex items-center py-8 sm:py-0">
         {/* Animated Background */}
         <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData.gradient} transition-all duration-1000`}>
@@ -447,7 +474,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-      )}
 
       {/* Brands Marquee */}
       <section className="py-8 bg-gray-900 overflow-hidden">
