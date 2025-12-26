@@ -35,36 +35,32 @@ const Home = () => {
     select: (data) => data.products
   });
 
-  // Fetch slider products (mix of phones and accessories, no laptops, diverse brands, PNG images preferred)
+  // Fetch slider products (mix of phones and accessories, no laptops, diverse brands)
   const { data: sliderProducts } = useQuery({
     queryKey: ['slider-products'],
     queryFn: () => api.get('/products?limit=100').then(res => res.data),
     select: (data) => {
       const products = data.products || [];
       
-      // Helper to check if product has PNG image (transparent background)
-      const hasPngImage = (p) => {
+      // Helper to check if product has any valid image
+      const hasValidImage = (p) => {
         if (!p.images) return false;
         const images = Array.isArray(p.images) ? p.images : 
           (typeof p.images === 'string' ? JSON.parse(p.images || '[]') : []);
-        if (images.length === 0) return false;
-        const firstImage = images[0] || '';
-        return firstImage.includes('image/png') || firstImage.toLowerCase().endsWith('.png');
+        return images.length > 0 && images[0] && images[0].length > 0;
       };
       
-      // Exclude laptops
-      const noLaptops = products.filter(p => {
+      // Exclude laptops and products without images
+      const validProducts = products.filter(p => {
         const name = (p.name || '').toLowerCase();
         const cat = (p.category || '').toLowerCase();
-        return !name.includes('laptop') && !name.includes('ordinateur') && !cat.includes('laptop');
+        const noLaptop = !name.includes('laptop') && !name.includes('ordinateur') && !cat.includes('laptop');
+        return noLaptop && hasValidImage(p);
       });
       
-      // Filter products with PNG images first (transparent backgrounds)
-      const pngProducts = noLaptops.filter(hasPngImage);
-      
-      // Get unique brands from PNG products
+      // Get unique brands
       const brandMap = new Map();
-      pngProducts.forEach(p => {
+      validProducts.forEach(p => {
         const brand = (p.brand || 'Other').toLowerCase();
         if (!brandMap.has(brand)) {
           brandMap.set(brand, p);
@@ -74,21 +70,10 @@ const Home = () => {
       // Convert to array and take up to 5 products from different brands
       const diverseProducts = Array.from(brandMap.values()).slice(0, 5);
       
-      // If we don't have 5 PNG products, fill with remaining PNG products
+      // If we don't have 5 products from different brands, fill with more products
       if (diverseProducts.length < 5) {
         const usedIds = new Set(diverseProducts.map(p => p.id));
-        for (const p of pngProducts) {
-          if (!usedIds.has(p.id) && diverseProducts.length < 5) {
-            diverseProducts.push(p);
-            usedIds.add(p.id);
-          }
-        }
-      }
-      
-      // If still not enough, fall back to non-PNG products
-      if (diverseProducts.length < 5) {
-        const usedIds = new Set(diverseProducts.map(p => p.id));
-        for (const p of noLaptops) {
+        for (const p of validProducts) {
           if (!usedIds.has(p.id) && diverseProducts.length < 5) {
             diverseProducts.push(p);
             usedIds.add(p.id);
