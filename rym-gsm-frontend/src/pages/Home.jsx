@@ -36,7 +36,7 @@ const Home = () => {
   });
 
   // Fetch slider products (mix of phones and accessories, no laptops, diverse brands, PNG images preferred)
-  const { data: sliderProducts } = useQuery({
+  const { data: sliderProducts, isLoading: sliderLoading } = useQuery({
     queryKey: ['slider-products'],
     queryFn: () => api.get('/products?limit=100').then(res => res.data),
     select: (data) => {
@@ -231,14 +231,15 @@ const Home = () => {
         image: getSliderImage(product),
         gradient: gradients[index % gradients.length],
         specs: parseProductSpecs(product),
-        brand: product.brand
+        brand: product.brand,
+        isLoading: false
       }))
     : [
         {
           id: 0,
-          title: "Découvrez nos Smartphones",
-          subtitle: "Les meilleures marques aux meilleurs prix",
-          price: "À partir de 299",
+          title: sliderLoading ? "Chargement..." : "Découvrez nos Smartphones",
+          subtitle: sliderLoading ? "Veuillez patienter" : "Les meilleures marques aux meilleurs prix",
+          price: sliderLoading ? "" : "À partir de 299",
           image: "/images/phones/rymgsmlogo.png",
           gradient: "from-primary-600 via-indigo-500 to-purple-400",
           specs: [
@@ -246,7 +247,8 @@ const Home = () => {
             { icon: "battery", text: "Grande autonomie" },
             { icon: "camera", text: "Caméras HD" },
             { icon: "cpu", text: "Performance" }
-          ]
+          ],
+          isLoading: sliderLoading
         }
       ];
 
@@ -416,16 +418,23 @@ const Home = () => {
               {/* Phone Image */}
               <div className="relative z-10 animate-phone-float">
                 <div className="relative h-[280px] sm:h-[300px] md:h-[400px] flex items-center justify-center">
-                  <img 
-                    src={currentSlideData.image}
-                    alt={currentSlideData.title}
-                    loading="eager"
-                    decoding="async"
-                    className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
-                    style={{ 
-                      filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))'
-                    }}
-                  />
+                  {currentSlideData.isLoading ? (
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span className="text-white/70 text-sm">Chargement des produits...</span>
+                    </div>
+                  ) : (
+                    <img 
+                      src={currentSlideData.image}
+                      alt={currentSlideData.title}
+                      loading="eager"
+                      decoding="async"
+                      className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
+                      style={{ 
+                        filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))'
+                      }}
+                    />
+                  )}
                   {/* White glow behind phone */}
                   <div className="absolute inset-0 -z-10 bg-white/20 blur-3xl rounded-full scale-75"></div>
                 </div>
