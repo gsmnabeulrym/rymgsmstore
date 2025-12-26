@@ -55,8 +55,8 @@ const Snowfall = () => {
         .snowflake {
           position: fixed;
           top: -20px;
-          color: white;
-          text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+          color: #6366f1;
+          text-shadow: 0 0 8px rgba(99, 102, 241, 0.6), 0 0 15px rgba(99, 102, 241, 0.4);
           pointer-events: none;
           z-index: 9999;
           animation: snowfall linear infinite;
