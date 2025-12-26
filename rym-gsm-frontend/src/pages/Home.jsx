@@ -38,16 +38,15 @@ const Home = () => {
   // Fetch slider products (newest/featured phones)
   const { data: sliderProducts } = useQuery({
     queryKey: ['slider-products'],
-    queryFn: () => api.get('/products?limit=10').then(res => res.data),
+    queryFn: () => api.get('/products?limit=20').then(res => res.data),
     select: (data) => {
-      // Filter to get only phones (not accessories) and with valid images
+      // Filter to get only phones (not accessories)
       const phones = data.products?.filter(p => {
-        const isPhone = p.category !== 'accessory' && p.category !== 'accessories';
-        const hasValidImage = p.images && Array.isArray(p.images) && p.images.length > 0 && 
-          typeof p.images[0] === 'string' && !p.images[0].startsWith('data:');
-        return isPhone || hasValidImage;
+        return p.category !== 'accessory' && p.category !== 'accessories';
       }) || [];
-      return phones.slice(0, 5);
+      // If we have phones, use them; otherwise use all products
+      const productsToUse = phones.length > 0 ? phones : (data.products || []);
+      return productsToUse.slice(0, 5);
     }
   });
 
