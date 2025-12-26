@@ -35,6 +35,13 @@ const Home = () => {
     select: (data) => data.products
   });
 
+  // Fetch slider products (newest/featured phones)
+  const { data: sliderProducts } = useQuery({
+    queryKey: ['slider-products'],
+    queryFn: () => api.get('/products?limit=5&category=phones').then(res => res.data),
+    select: (data) => data.products
+  });
+
   // Generate ItemList schema for featured products
   const itemListSchema = featuredProducts 
     ? generateItemListSchema(featuredProducts, "Produits en vedette")
@@ -49,11 +56,12 @@ const Home = () => {
 
   // Auto-rotate hero slides
   useEffect(() => {
+    const slidesCount = sliderProducts?.length || 1;
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      setCurrentSlide((prev) => (prev + 1) % slidesCount);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [sliderProducts]);
 
   // Intersection Observer for scroll animations
   useEffect(() => {
@@ -75,51 +83,113 @@ const Home = () => {
     return () => observer.disconnect();
   }, []);
 
-  const heroSlides = [
-    {
-      title: "OPPO A6 Pro",
-      subtitle: "Performance et élégance à prix accessible",
-      price4g: "999",
-      price5g: "1199",
-      image: "/images/phones/OppoA6pro.png",
-      gradient: "from-pink-600 via-rose-500 to-orange-400",
-      accent: "pink",
-      specs: [
-        { icon: "wifi", text: "4G / 5G" },
-        { icon: "battery", text: "7000mAh / 6500mAh" },
-        { icon: "camera", text: "50MP AI" },
-        { icon: "cpu", text: "8GB + 256GB" }
-      ]
-    },
-    {
-      title: "Xiaomi Redmi 15C",
-      subtitle: "Performance et design à petit prix",
-      price: "549",
-      image: "/images/phones/Redmi15C.png",
-      gradient: "from-cyan-600 via-teal-500 to-emerald-400",
-      accent: "cyan",
-      specs: [
-        { icon: "wifi", text: "4G LTE" },
-        { icon: "battery", text: "5160mAh" },
-        { icon: "camera", text: "50MP" },
-        { icon: "cpu", text: "4GB + 128GB" }
-      ]
-    },
-    {
-      title: "Samsung Galaxy A56 5G",
-      subtitle: "L'expérience Galaxy nouvelle génération",
-      price: "1999",
-      image: "/images/phones/A56_5g.png",
-      gradient: "from-violet-600 via-purple-500 to-indigo-400",
-      accent: "purple",
-      specs: [
-        { icon: "wifi", text: "5G" },
-        { icon: "battery", text: "5000mAh" },
-        { icon: "camera", text: "50MP OIS" },
-        { icon: "cpu", text: "8GB + 256GB" }
-      ]
-    }
+  // Gradient colors for slides
+  const gradients = [
+    "from-pink-600 via-rose-500 to-orange-400",
+    "from-cyan-600 via-teal-500 to-emerald-400",
+    "from-violet-600 via-purple-500 to-indigo-400",
+    "from-blue-600 via-indigo-500 to-purple-400",
+    "from-emerald-600 via-teal-500 to-cyan-400"
   ];
+
+  // Parse product specs from description or specs field
+  const parseProductSpecs = (product) => {
+    const specs = [];
+    const desc = (product.description || '').toLowerCase();
+    const productSpecs = typeof product.specs === 'string' ? JSON.parse(product.specs || '{}') : (product.specs || {});
+    
+    // Network
+    if (desc.includes('5g') || productSpecs.network?.includes('5G')) {
+      specs.push({ icon: "wifi", text: "5G" });
+    } else if (desc.includes('4g') || desc.includes('lte')) {
+      specs.push({ icon: "wifi", text: "4G LTE" });
+    }
+    
+    // Battery
+    const batteryMatch = desc.match(/(\d{4,5})\s*mah/i);
+    if (batteryMatch) {
+      specs.push({ icon: "battery", text: `${batteryMatch[1]}mAh` });
+    } else if (productSpecs.battery) {
+      specs.push({ icon: "battery", text: productSpecs.battery });
+    }
+    
+    // Camera
+    const cameraMatch = desc.match(/(\d+)\s*mp/i);
+    if (cameraMatch) {
+      specs.push({ icon: "camera", text: `${cameraMatch[1]}MP` });
+    } else if (productSpecs.camera) {
+      specs.push({ icon: "camera", text: productSpecs.camera });
+    }
+    
+    // Storage/RAM
+    const storageMatch = desc.match(/(\d+)\s*go?\s*[+\/]\s*(\d+)\s*go?/i) || desc.match(/(\d+)\s*gb?\s*[+\/]\s*(\d+)\s*gb?/i);
+    if (storageMatch) {
+      specs.push({ icon: "cpu", text: `${storageMatch[1]}GB + ${storageMatch[2]}GB` });
+    } else if (productSpecs.ram && productSpecs.storage) {
+      specs.push({ icon: "cpu", text: `${productSpecs.ram} + ${productSpecs.storage}` });
+    }
+    
+    // Default specs if none found
+    if (specs.length === 0) {
+      specs.push({ icon: "wifi", text: "4G LTE" });
+      specs.push({ icon: "battery", text: "Grande autonomie" });
+      specs.push({ icon: "camera", text: "Caméra HD" });
+      specs.push({ icon: "cpu", text: "Performance" });
+    }
+    
+    // Ensure we have 4 specs
+    while (specs.length < 4) {
+      const defaults = [
+        { icon: "wifi", text: "Connectivité" },
+        { icon: "battery", text: "Longue durée" },
+        { icon: "camera", text: "Photo HD" },
+        { icon: "cpu", text: "Rapide" }
+      ];
+      specs.push(defaults[specs.length]);
+    }
+    
+    return specs.slice(0, 4);
+  };
+
+  // Get valid image URL for slider
+  const getSliderImage = (product) => {
+    if (!product.images) return '/images/phones/rymgsmlogo.png';
+    const images = Array.isArray(product.images) ? product.images : 
+      (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : []);
+    if (images.length > 0 && images[0] && !images[0].startsWith('data:')) {
+      return images[0];
+    }
+    return '/images/phones/rymgsmlogo.png';
+  };
+
+  // Build hero slides from real products
+  const heroSlides = sliderProducts?.length > 0 
+    ? sliderProducts.map((product, index) => ({
+        id: product.id,
+        title: product.name,
+        subtitle: product.description?.substring(0, 60) + '...' || `${product.brand} - Disponible chez RYM GSM`,
+        price: product.price?.toString() || '0',
+        image: getSliderImage(product),
+        gradient: gradients[index % gradients.length],
+        specs: parseProductSpecs(product),
+        brand: product.brand
+      }))
+    : [
+        {
+          id: 0,
+          title: "Découvrez nos Smartphones",
+          subtitle: "Les meilleures marques aux meilleurs prix",
+          price: "À partir de 299",
+          image: "/images/phones/rymgsmlogo.png",
+          gradient: "from-primary-600 via-indigo-500 to-purple-400",
+          specs: [
+            { icon: "wifi", text: "4G/5G" },
+            { icon: "battery", text: "Grande autonomie" },
+            { icon: "camera", text: "Caméras HD" },
+            { icon: "cpu", text: "Performance" }
+          ]
+        }
+      ];
 
   const brands = [
     { name: "Samsung", logo: "🔷" },
@@ -174,8 +244,11 @@ const Home = () => {
     }
   };
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % (heroSlides?.length || 1));
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + (heroSlides?.length || 1)) % (heroSlides?.length || 1));
+
+  // Current slide data with safety check
+  const currentSlideData = heroSlides[currentSlide] || heroSlides[0];
 
   return (
     <>
@@ -190,7 +263,7 @@ const Home = () => {
       {/* Hero Section - Modern Split Design */}
       <section className="relative min-h-screen flex items-center py-8 sm:py-0">
         {/* Animated Background */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${heroSlides[currentSlide].gradient} transition-all duration-1000`}>
+        <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData.gradient} transition-all duration-1000`}>
           {/* Animated shapes */}
           <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-blob"></div>
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-blob delay-1000"></div>
@@ -219,12 +292,12 @@ const Home = () => {
               <div className="space-y-3 sm:space-y-4">
                 <div className="min-h-[120px] sm:h-[160px] md:h-[180px] flex items-end pb-2">
                   <h1 key={`title-${currentSlide}`} className="text-3xl sm:text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100">
-                    {heroSlides[currentSlide].title}
+                    {currentSlideData.title}
                   </h1>
                 </div>
                 <div className="min-h-[60px] sm:h-[80px] flex items-start">
                   <p key={`subtitle-${currentSlide}`} className="text-base sm:text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200">
-                    {heroSlides[currentSlide].subtitle}
+                    {currentSlideData.subtitle}
                   </p>
                 </div>
               </div>
@@ -232,28 +305,15 @@ const Home = () => {
               {/* Price */}
               <div className="animate-slide-in-left delay-300 min-h-[140px] sm:h-[190px] md:h-[120px] flex items-center">
                 <div key={`price-${currentSlide}`} className="w-full">
-                  {heroSlides[currentSlide].price4g ? (
-                    <div className="flex flex-wrap gap-3 sm:gap-4">
-                      <div className="glass px-5 sm:px-6 py-3 sm:py-4 rounded-2xl shadow-lg">
-                        <span className="text-xs sm:text-sm text-white/70 font-medium">4G</span>
-                        <div className="text-2xl sm:text-3xl font-bold">{heroSlides[currentSlide].price4g} <span className="text-base sm:text-lg">Dt</span></div>
-                      </div>
-                      <div className="glass px-5 sm:px-6 py-3 sm:py-4 rounded-2xl border-2 border-yellow-400/50 shadow-lg">
-                        <span className="text-xs sm:text-sm text-yellow-300 font-medium">5G</span>
-                        <div className="text-2xl sm:text-3xl font-bold">{heroSlides[currentSlide].price5g} <span className="text-base sm:text-lg">Dt</span></div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="glass inline-block px-6 sm:px-8 py-3 sm:py-4 rounded-2xl shadow-lg">
-                      <span className="text-3xl sm:text-4xl font-bold">{heroSlides[currentSlide].price} <span className="text-lg sm:text-xl">Dt</span></span>
-                    </div>
-                  )}
+                  <div className="glass inline-block px-6 sm:px-8 py-3 sm:py-4 rounded-2xl shadow-lg">
+                    <span className="text-3xl sm:text-4xl font-bold">{currentSlideData.price} <span className="text-lg sm:text-xl">Dt</span></span>
+                  </div>
                 </div>
               </div>
 
               {/* Features - Dynamic per phone */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4 animate-slide-in-left delay-500 min-h-[100px] sm:h-[130px]">
-                {heroSlides[currentSlide].specs.map((spec, i) => {
+                {currentSlideData.specs.map((spec, i) => {
                   const icons = {
                     wifi: <Wifi className="h-5 w-5" />,
                     battery: <Battery className="h-5 w-5" />,
@@ -272,16 +332,19 @@ const Home = () => {
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 animate-slide-in-left delay-700">
                 <Link
-                  to="/products"
+                  to={currentSlideData.id ? `/products/${currentSlideData.id}` : '/products'}
                   className="group bg-white text-gray-900 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl inline-flex items-center justify-center shadow-lg active:scale-95"
                 >
                   Acheter Maintenant
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-2 transition-transform" />
                 </Link>
-                <button className="glass px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-white/20 transition-all duration-300 inline-flex items-center justify-center gap-2 shadow-lg active:scale-95">
-                  <Play className="h-5 w-5" />
+                <Link 
+                  to={currentSlideData.id ? `/products/${currentSlideData.id}` : '/products'}
+                  className="glass px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-white/20 transition-all duration-300 inline-flex items-center justify-center gap-2 shadow-lg active:scale-95"
+                >
+                  <Eye className="h-5 w-5" />
                   Voir Détails
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -295,8 +358,8 @@ const Home = () => {
               <div className="relative z-10 animate-phone-float">
                 <div className="relative h-[280px] sm:h-[300px] md:h-[400px] flex items-center justify-center">
                   <img 
-                    src={heroSlides[currentSlide].image}
-                    alt={heroSlides[currentSlide].title}
+                    src={currentSlideData.image}
+                    alt={currentSlideData.title}
                     loading="eager"
                     decoding="async"
                     className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
