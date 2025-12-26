@@ -35,18 +35,43 @@ const Home = () => {
     select: (data) => data.products
   });
 
-  // Fetch slider products (newest/featured phones)
+  // Fetch slider products (mix of phones and accessories, no laptops, diverse brands)
   const { data: sliderProducts } = useQuery({
     queryKey: ['slider-products'],
-    queryFn: () => api.get('/products?limit=20').then(res => res.data),
+    queryFn: () => api.get('/products?limit=50').then(res => res.data),
     select: (data) => {
-      // Filter to get only phones (not accessories)
-      const phones = data.products?.filter(p => {
-        return p.category !== 'accessory' && p.category !== 'accessories';
-      }) || [];
-      // If we have phones, use them; otherwise use all products
-      const productsToUse = phones.length > 0 ? phones : (data.products || []);
-      return productsToUse.slice(0, 5);
+      const products = data.products || [];
+      // Exclude laptops
+      const noLaptops = products.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        return !name.includes('laptop') && !name.includes('ordinateur') && !cat.includes('laptop');
+      });
+      
+      // Get unique brands and pick one product per brand for diversity
+      const brandMap = new Map();
+      noLaptops.forEach(p => {
+        const brand = (p.brand || 'Other').toLowerCase();
+        if (!brandMap.has(brand)) {
+          brandMap.set(brand, p);
+        }
+      });
+      
+      // Convert to array and take up to 5 products from different brands
+      const diverseProducts = Array.from(brandMap.values()).slice(0, 5);
+      
+      // If we don't have 5, fill with remaining products
+      if (diverseProducts.length < 5) {
+        const usedIds = new Set(diverseProducts.map(p => p.id));
+        for (const p of noLaptops) {
+          if (!usedIds.has(p.id) && diverseProducts.length < 5) {
+            diverseProducts.push(p);
+            usedIds.add(p.id);
+          }
+        }
+      }
+      
+      return diverseProducts;
     }
   });
 
@@ -159,12 +184,13 @@ const Home = () => {
     return specs.slice(0, 4);
   };
 
-  // Get valid image URL for slider
+  // Get valid image URL for slider (allow base64 images)
   const getSliderImage = (product) => {
     if (!product.images) return '/images/phones/rymgsmlogo.png';
     const images = Array.isArray(product.images) ? product.images : 
       (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : []);
-    if (images.length > 0 && images[0] && !images[0].startsWith('data:')) {
+    // Return the first image if available (including base64)
+    if (images.length > 0 && images[0]) {
       return images[0];
     }
     return '/images/phones/rymgsmlogo.png';
