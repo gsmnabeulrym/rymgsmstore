@@ -35,61 +35,45 @@ const Home = () => {
     select: (data) => data.products
   });
 
-  // Fetch slider products (mix of phones and accessories, no laptops, diverse brands, PNG images preferred)
-  const { data: sliderProducts } = useQuery({
+  // Fetch slider products - top products with images
+  const { data: sliderProducts, isLoading: sliderLoading } = useQuery({
     queryKey: ['slider-products'],
-    queryFn: () => api.get('/products?limit=100').then(res => res.data),
+    queryFn: () => api.get('/products?limit=50').then(res => res.data),
     select: (data) => {
       const products = data.products || [];
       
-      // Helper to check if product has PNG image (transparent background)
-      const hasPngImage = (p) => {
+      // Filter products with valid images
+      const withImages = products.filter(p => {
         if (!p.images) return false;
         const images = Array.isArray(p.images) ? p.images : 
           (typeof p.images === 'string' ? JSON.parse(p.images || '[]') : []);
-        if (images.length === 0) return false;
-        const firstImage = images[0] || '';
-        return firstImage.includes('image/png') || firstImage.toLowerCase().endsWith('.png');
-      };
+        return images.length > 0 && images[0];
+      });
       
       // Exclude laptops
-      const noLaptops = products.filter(p => {
+      const noLaptops = withImages.filter(p => {
         const name = (p.name || '').toLowerCase();
         const cat = (p.category || '').toLowerCase();
         return !name.includes('laptop') && !name.includes('ordinateur') && !cat.includes('laptop');
       });
       
-      // Filter products with PNG images first (transparent backgrounds)
-      const pngProducts = noLaptops.filter(hasPngImage);
-      
-      // Get unique brands from PNG products
+      // Get diverse brands
       const brandMap = new Map();
-      pngProducts.forEach(p => {
+      noLaptops.forEach(p => {
         const brand = (p.brand || 'Other').toLowerCase();
         if (!brandMap.has(brand)) {
           brandMap.set(brand, p);
         }
       });
       
-      // Convert to array and take up to 5 products from different brands
-      const diverseProducts = Array.from(brandMap.values()).slice(0, 5);
+      // Take up to 6 products from different brands
+      const diverseProducts = Array.from(brandMap.values()).slice(0, 6);
       
-      // If we don't have 5 PNG products, fill with remaining PNG products
-      if (diverseProducts.length < 5) {
-        const usedIds = new Set(diverseProducts.map(p => p.id));
-        for (const p of pngProducts) {
-          if (!usedIds.has(p.id) && diverseProducts.length < 5) {
-            diverseProducts.push(p);
-            usedIds.add(p.id);
-          }
-        }
-      }
-      
-      // If still not enough, fall back to non-PNG products
-      if (diverseProducts.length < 5) {
+      // Fill with more products if needed
+      if (diverseProducts.length < 6) {
         const usedIds = new Set(diverseProducts.map(p => p.id));
         for (const p of noLaptops) {
-          if (!usedIds.has(p.id) && diverseProducts.length < 5) {
+          if (!usedIds.has(p.id) && diverseProducts.length < 6) {
             diverseProducts.push(p);
             usedIds.add(p.id);
           }
@@ -114,10 +98,10 @@ const Home = () => {
 
   // Auto-rotate hero slides
   useEffect(() => {
-    const slidesCount = sliderProducts?.length || 1;
+    if (!sliderProducts || sliderProducts.length === 0) return;
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slidesCount);
-    }, 5000);
+      setCurrentSlide((prev) => (prev + 1) % sliderProducts.length);
+    }, 6000);
     return () => clearInterval(interval);
   }, [sliderProducts]);
 
@@ -141,13 +125,14 @@ const Home = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Gradient colors for slides
+  // Modern gradient colors for slides
   const gradients = [
-    "from-pink-600 via-rose-500 to-orange-400",
-    "from-cyan-600 via-teal-500 to-emerald-400",
-    "from-violet-600 via-purple-500 to-indigo-400",
-    "from-blue-600 via-indigo-500 to-purple-400",
-    "from-emerald-600 via-teal-500 to-cyan-400"
+    "from-purple-600 via-pink-500 to-rose-500",
+    "from-blue-600 via-cyan-500 to-teal-500",
+    "from-indigo-600 via-purple-500 to-pink-500",
+    "from-emerald-600 via-green-500 to-teal-500",
+    "from-orange-600 via-red-500 to-pink-500",
+    "from-cyan-600 via-blue-500 to-indigo-500"
   ];
 
   // Parse product specs from description or specs field
@@ -209,46 +194,30 @@ const Home = () => {
     return specs.slice(0, 4);
   };
 
-  // Get valid image URL for slider (allow base64 images)
+  // Get valid image URL for slider
   const getSliderImage = (product) => {
-    if (!product.images) return '/images/phones/rymgsmlogo.png';
+    if (!product?.images) return null;
     const images = Array.isArray(product.images) ? product.images : 
       (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : []);
-    // Return the first image if available (including base64)
-    if (images.length > 0 && images[0]) {
-      return images[0];
-    }
-    return '/images/phones/rymgsmlogo.png';
+    return images.length > 0 && images[0] ? images[0] : null;
   };
 
   // Build hero slides from real products
   const heroSlides = sliderProducts?.length > 0 
-    ? sliderProducts.map((product, index) => ({
-        id: product.id,
-        title: product.name,
-        subtitle: product.description?.substring(0, 60) + '...' || `${product.brand} - Disponible chez RYM GSM`,
-        price: product.price?.toString() || '0',
-        image: getSliderImage(product),
-        gradient: gradients[index % gradients.length],
-        specs: parseProductSpecs(product),
-        brand: product.brand
-      }))
-    : [
-        {
-          id: 0,
-          title: "Découvrez nos Smartphones",
-          subtitle: "Les meilleures marques aux meilleurs prix",
-          price: "À partir de 299",
-          image: "/images/phones/rymgsmlogo.png",
-          gradient: "from-primary-600 via-indigo-500 to-purple-400",
-          specs: [
-            { icon: "wifi", text: "4G/5G" },
-            { icon: "battery", text: "Grande autonomie" },
-            { icon: "camera", text: "Caméras HD" },
-            { icon: "cpu", text: "Performance" }
-          ]
-        }
-      ];
+    ? sliderProducts
+        .filter(product => getSliderImage(product) !== null)
+        .map((product, index) => ({
+          id: product.id,
+          title: product.name,
+          subtitle: product.description?.substring(0, 80) || `${product.brand} - Disponible maintenant`,
+          price: product.price?.toString() || '0',
+          image: getSliderImage(product),
+          gradient: gradients[index % gradients.length],
+          specs: parseProductSpecs(product),
+          brand: product.brand,
+          category: product.category
+        }))
+    : [];
 
   const brands = [
     { name: "Samsung", logo: "🔷" },
@@ -303,11 +272,20 @@ const Home = () => {
     }
   };
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % (heroSlides?.length || 1));
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + (heroSlides?.length || 1)) % (heroSlides?.length || 1));
+  const nextSlide = () => {
+    if (heroSlides.length > 0) {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }
+  };
+  
+  const prevSlide = () => {
+    if (heroSlides.length > 0) {
+      setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    }
+  };
 
-  // Current slide data with safety check
-  const currentSlideData = heroSlides[currentSlide] || heroSlides[0];
+  // Current slide data
+  const currentSlideData = heroSlides[currentSlide] || null;
 
   return (
     <>
@@ -319,10 +297,26 @@ const Home = () => {
         structuredData={allStructuredData}
       />
       <div className="min-h-screen overflow-hidden">
-      {/* Hero Section - Modern Split Design */}
+      {/* Hero Section - Ultimate Modern Design */}
+      {sliderLoading ? (
+        <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-rose-500">
+          <div className="text-center text-white">
+            <div className="w-20 h-20 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-6"></div>
+            <p className="text-2xl font-bold">Chargement des produits...</p>
+          </div>
+        </section>
+      ) : heroSlides.length === 0 ? (
+        <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+          <div className="text-center text-white px-4">
+            <Smartphone className="w-24 h-24 mx-auto mb-6 opacity-50" />
+            <h2 className="text-4xl font-bold mb-4">Produits bientôt disponibles</h2>
+            <p className="text-xl text-white/70">Revenez plus tard pour découvrir nos offres</p>
+          </div>
+        </section>
+      ) : (
       <section className="relative min-h-screen flex items-center py-8 sm:py-0">
         {/* Animated Background */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData.gradient} transition-all duration-1000`}>
+        <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData?.gradient || gradients[0]} transition-all duration-1000`}>
           {/* Animated shapes */}
           <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-blob"></div>
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-blob delay-1000"></div>
@@ -347,16 +341,29 @@ const Home = () => {
                 <span className="text-xs sm:text-sm font-semibold">Nouveau Arrivage</span>
               </div>
 
+              {/* Brand Badge */}
+              {currentSlideData?.brand && (
+                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-5 py-2 rounded-full animate-slide-in-left w-fit border border-white/20">
+                  <span className="text-sm font-bold">{currentSlideData.brand}</span>
+                  {currentSlideData.category && (
+                    <>
+                      <span className="text-white/50">•</span>
+                      <span className="text-xs text-white/80">{currentSlideData.category}</span>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Title */}
               <div className="space-y-3 sm:space-y-4">
                 <div className="min-h-[120px] sm:h-[160px] md:h-[180px] flex items-end pb-2">
-                  <h1 key={`title-${currentSlide}`} className="text-3xl sm:text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100">
-                    {currentSlideData.title}
+                  <h1 key={`title-${currentSlide}`} className="text-3xl sm:text-5xl md:text-7xl font-black leading-tight animate-slide-in-left delay-100 drop-shadow-2xl">
+                    {currentSlideData?.title || ''}
                   </h1>
                 </div>
                 <div className="min-h-[60px] sm:h-[80px] flex items-start">
                   <p key={`subtitle-${currentSlide}`} className="text-base sm:text-xl md:text-2xl text-white/90 font-medium animate-slide-in-left delay-200">
-                    {currentSlideData.subtitle}
+                    {currentSlideData?.subtitle || ''}
                   </p>
                 </div>
               </div>
@@ -364,15 +371,22 @@ const Home = () => {
               {/* Price */}
               <div className="animate-slide-in-left delay-300 min-h-[140px] sm:h-[190px] md:h-[120px] flex items-center">
                 <div key={`price-${currentSlide}`} className="w-full">
-                  <div className="glass inline-block px-6 sm:px-8 py-3 sm:py-4 rounded-2xl shadow-lg">
-                    <span className="text-3xl sm:text-4xl font-bold">{currentSlideData.price} <span className="text-lg sm:text-xl">Dt</span></span>
+                  <div className="relative inline-block">
+                    <div className="absolute inset-0 bg-white/20 blur-xl rounded-3xl"></div>
+                    <div className="relative glass-dark px-8 sm:px-10 py-4 sm:py-5 rounded-3xl shadow-2xl border border-white/20">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-4xl sm:text-5xl font-black">{currentSlideData?.price || '0'}</span>
+                        <span className="text-xl sm:text-2xl font-bold text-white/80">Dt</span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-white/60 mt-1">Prix TTC</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Features - Dynamic per phone */}
+              {/* Specs - Dynamic per phone */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4 animate-slide-in-left delay-500 min-h-[100px] sm:h-[130px]">
-                {currentSlideData.specs.map((spec, i) => {
+                {currentSlideData?.specs?.map((spec, i) => {
                   const icons = {
                     wifi: <Wifi className="h-5 w-5" />,
                     battery: <Battery className="h-5 w-5" />,
@@ -380,26 +394,27 @@ const Home = () => {
                     cpu: <Cpu className="h-5 w-5" />
                   };
                   return (
-                    <div key={`${currentSlide}-spec-${i}`} className="flex items-center gap-2 sm:gap-3 text-white/90">
-                      <div className="p-1.5 sm:p-2 bg-white/10 rounded-lg shadow-md">{icons[spec.icon]}</div>
-                      <span className="text-xs sm:text-sm font-medium">{spec.text}</span>
+                    <div key={`${currentSlide}-spec-${i}`} className="group flex items-center gap-2 sm:gap-3 glass-dark px-4 py-3 rounded-xl hover:bg-white/20 transition-all duration-300 border border-white/10">
+                      <div className="p-2 bg-white/10 rounded-lg group-hover:scale-110 transition-transform">{icons[spec.icon]}</div>
+                      <span className="text-xs sm:text-sm font-semibold">{spec.text}</span>
                     </div>
                   );
-                })}
+                }) || []}
               </div>
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 animate-slide-in-left delay-700">
                 <Link
-                  to={currentSlideData.id ? `/products/${currentSlideData.id}` : '/products'}
-                  className="group bg-white text-gray-900 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl inline-flex items-center justify-center shadow-lg active:scale-95"
+                  to={currentSlideData?.id ? `/products/${currentSlideData.id}` : '/products'}
+                  className="group relative bg-white text-gray-900 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl font-black text-base sm:text-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center shadow-2xl active:scale-95 overflow-hidden"
                 >
-                  Acheter Maintenant
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-2 transition-transform" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <span className="relative z-10 group-hover:text-white transition-colors">Acheter Maintenant</span>
+                  <ArrowRight className="relative z-10 ml-2 h-5 w-5 group-hover:translate-x-2 transition-transform group-hover:text-white" />
                 </Link>
                 <Link 
-                  to={currentSlideData.id ? `/products/${currentSlideData.id}` : '/products'}
-                  className="glass px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-white/20 transition-all duration-300 inline-flex items-center justify-center gap-2 shadow-lg active:scale-95"
+                  to={currentSlideData?.id ? `/products/${currentSlideData.id}` : '/products'}
+                  className="glass-dark border border-white/20 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl font-bold text-base sm:text-lg hover:bg-white/20 transition-all duration-300 inline-flex items-center justify-center gap-2 shadow-xl active:scale-95"
                 >
                   <Eye className="h-5 w-5" />
                   Voir Détails
@@ -407,59 +422,67 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Right Content - Phone Display */}
-            <div className="relative flex justify-center items-center animate-slide-in-right h-[350px] sm:h-[400px] md:h-[500px] order-first lg:order-last">
-              {/* Glowing ring */}
-              <div className="absolute w-80 h-80 md:w-96 md:h-96 rounded-full border-4 border-white/20 animate-pulse"></div>
-              <div className="absolute w-72 h-72 md:w-80 md:h-80 rounded-full border-2 border-white/10 animate-pulse delay-500"></div>
+            {/* Right Content - Product Display */}
+            <div className="relative flex justify-center items-center animate-slide-in-right h-[350px] sm:h-[400px] md:h-[500px] lg:h-[600px] order-first lg:order-last">
+              {/* 3D Glowing rings */}
+              <div className="absolute w-[300px] h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] rounded-full border-4 border-white/20 animate-spin-slow"></div>
+              <div className="absolute w-[250px] h-[250px] md:w-[350px] md:h-[350px] lg:w-[450px] lg:h-[450px] rounded-full border-2 border-white/10 animate-spin-slow-reverse"></div>
+              <div className="absolute w-[200px] h-[200px] md:w-[300px] md:h-[300px] lg:w-[400px] lg:h-[400px] rounded-full bg-white/5 blur-2xl animate-pulse"></div>
               
-              {/* Phone Image */}
+              {/* Product Image */}
               <div className="relative z-10 animate-phone-float">
-                <div className="relative h-[280px] sm:h-[300px] md:h-[400px] flex items-center justify-center">
+                <div className="relative h-[280px] sm:h-[320px] md:h-[420px] lg:h-[500px] flex items-center justify-center">
                   <img 
-                    src={currentSlideData.image}
-                    alt={currentSlideData.title}
+                    key={`img-${currentSlide}`}
+                    src={currentSlideData?.image || ''}
+                    alt={currentSlideData?.title || 'Product'}
                     loading="eager"
                     decoding="async"
-                    className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
+                    className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px] lg:max-w-[420px] animate-fade-in"
                     style={{ 
-                      filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))'
+                      filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.5))'
                     }}
                   />
-                  {/* White glow behind phone */}
-                  <div className="absolute inset-0 -z-10 bg-white/20 blur-3xl rounded-full scale-75"></div>
+                  {/* Enhanced glow */}
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/30 via-white/10 to-transparent blur-3xl rounded-full scale-90"></div>
                 </div>
                 
-                {/* Floating badges */}
-                <div className="absolute -top-2 sm:-top-4 -right-2 sm:-right-4 bg-yellow-400 text-gray-900 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm animate-bounce shadow-lg">
-                  🔥 HOT
+                {/* Animated badges */}
+                <div className="absolute -top-4 -right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-4 py-2 rounded-2xl font-black text-sm animate-bounce shadow-2xl border-2 border-white/50">
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="h-4 w-4" />
+                    NOUVEAU
+                  </span>
                 </div>
-                <div className="absolute -bottom-2 sm:-bottom-4 -left-2 sm:-left-4 glass-dark text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-lg">
-                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                <div className="absolute -bottom-4 -left-4 glass-dark text-white px-4 py-2 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-2xl border border-white/20 backdrop-blur-xl">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
                   En Stock
+                </div>
+                <div className="absolute top-1/2 -right-8 glass-dark text-white px-3 py-2 rounded-xl font-semibold text-xs shadow-xl border border-white/20 backdrop-blur-xl animate-pulse">
+                  ⚡ Livraison 24h
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Slide Navigation */}
-          <div className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-3 sm:gap-4">
+          {/* Enhanced Slide Navigation */}
+          <div className="absolute bottom-8 sm:bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-4 sm:gap-6">
             <button 
               onClick={prevSlide}
-              className="p-2.5 sm:p-3 glass rounded-full hover:bg-white/20 transition-all active:scale-95 shadow-lg"
+              className="group p-3 sm:p-4 glass-dark border border-white/20 rounded-2xl hover:bg-white/20 transition-all active:scale-95 shadow-2xl backdrop-blur-xl"
             >
-              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
             </button>
             
-            <div className="flex gap-2">
+            <div className="flex gap-3 glass-dark px-4 py-3 rounded-2xl border border-white/20 backdrop-blur-xl shadow-2xl">
               {heroSlides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`h-2 rounded-full transition-all duration-300 shadow-md ${
+                  className={`h-2.5 rounded-full transition-all duration-500 ${
                     index === currentSlide 
-                      ? 'w-8 bg-white' 
-                      : 'w-2 bg-white/50 hover:bg-white/75 active:scale-95'
+                      ? 'w-10 bg-white shadow-lg' 
+                      : 'w-2.5 bg-white/40 hover:bg-white/70 hover:w-6 active:scale-95'
                   }`}
                 />
               ))}
@@ -467,13 +490,14 @@ const Home = () => {
             
             <button 
               onClick={nextSlide}
-              className="p-2.5 sm:p-3 glass rounded-full hover:bg-white/20 transition-all active:scale-95 shadow-lg"
+              className="group p-3 sm:p-4 glass-dark border border-white/20 rounded-2xl hover:bg-white/20 transition-all active:scale-95 shadow-2xl backdrop-blur-xl"
             >
-              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
             </button>
           </div>
         </div>
       </section>
+      )}
 
       {/* Brands Marquee */}
       <section className="py-8 bg-gray-900 overflow-hidden">
