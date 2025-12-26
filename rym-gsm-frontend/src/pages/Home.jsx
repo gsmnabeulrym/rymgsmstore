@@ -391,20 +391,17 @@ const Home = () => {
               {/* Phone Image */}
               <div className="relative z-10 animate-phone-float">
                 <div className="relative h-[280px] sm:h-[300px] md:h-[400px] flex items-center justify-center">
-                  <img 
-                    src={currentSlideData.image}
-                    alt={currentSlideData.title}
-                    loading="eager"
-                    decoding="async"
-                    className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
-                    style={{ 
-                      filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))',
-                      mixBlendMode: 'multiply',
-                      backgroundColor: 'transparent'
-                    }}
-                  />
+                  <div className="relative bg-white rounded-3xl p-4 shadow-2xl">
+                    <img 
+                      src={currentSlideData.image}
+                      alt={currentSlideData.title}
+                      loading="eager"
+                      decoding="async"
+                      className="w-auto h-[240px] sm:h-[260px] md:h-[350px] object-contain"
+                    />
+                  </div>
                   {/* White glow behind phone */}
-                  <div className="absolute inset-0 -z-10 bg-white/20 blur-3xl rounded-full scale-75"></div>
+                  <div className="absolute inset-0 -z-10 bg-white/30 blur-3xl rounded-full scale-90"></div>
                 </div>
                 
                 {/* Floating badges */}
