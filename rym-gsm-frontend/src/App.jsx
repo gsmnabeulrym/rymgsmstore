@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
 import ScrollToTop from './components/ScrollToTop';
 import SocialProof from './components/SocialProof';
+import Snowfall from './components/Snowfall';
 
 // Pages
 import Home from './pages/Home';
@@ -86,6 +87,7 @@ function App() {
               <ComparisonBar />
               <WhatsAppButton />
               <SocialProof />
+              <Snowfall />
               <Toaster position="top-right" />
             </div>
           </Router>
