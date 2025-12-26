@@ -300,237 +300,261 @@ const Home = () => {
         structuredData={allStructuredData}
       />
       <div className="min-h-screen overflow-hidden">
-      {/* Premium Hero Slider - Legendary Design */}
+      {/* LEGENDARY HERO SLIDER - Revolutionary Design */}
       {sliderLoading ? (
-        <section className="relative min-h-[600px] flex items-center justify-center bg-gradient-to-br from-[#0A0E27] via-[#1a1f3a] to-[#0f1629]">
-          <div className="text-center text-white">
-            <div className="w-24 h-24 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-6 shadow-[0_0_30px_rgba(0,212,255,0.5)]"></div>
-            <p className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Chargement de l'expérience premium...</p>
+        <section className="hero-legendary relative min-h-[700px] flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-32 h-32 relative mx-auto mb-8">
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-cyan-500 animate-spin"></div>
+              <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-purple-500 animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+              <div className="absolute inset-4 rounded-full border-4 border-transparent border-t-pink-500 animate-spin" style={{animationDuration: '2s'}}></div>
+            </div>
+            <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 animate-pulse">Chargement...</p>
           </div>
         </section>
       ) : heroSlides.length === 0 ? (
-        <section className="relative min-h-[600px] flex items-center justify-center bg-gradient-to-br from-[#0A0E27] via-[#1a1f3a] to-[#0f1629]">
-          <div className="text-center text-white px-4">
-            <Smartphone className="w-24 h-24 mx-auto mb-6 opacity-50 text-cyan-400" />
-            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Collection Premium Bientôt Disponible</h2>
-            <p className="text-xl text-white/70">Revenez découvrir nos produits d'exception</p>
+        <section className="hero-legendary relative min-h-[700px] flex items-center justify-center">
+          <div className="text-center px-4">
+            <Smartphone className="w-32 h-32 mx-auto mb-8 text-cyan-400 animate-levitate" />
+            <h2 className="text-5xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">Collection Bientôt Disponible</h2>
+            <p className="text-xl text-white/60">Revenez découvrir nos produits d'exception</p>
           </div>
         </section>
       ) : (
       <section 
-        className="relative w-full min-h-[600px] flex items-center overflow-hidden"
+        className="hero-legendary relative w-full min-h-[700px] lg:min-h-[800px] flex items-center overflow-hidden"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
-        {/* Cinematic Animated Background */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData?.gradient?.bg || premiumGradients[0].bg} transition-all duration-1000`}>
-          {/* Floating particles */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-[10%] left-[15%] w-2 h-2 bg-cyan-400 rounded-full animate-float-particle opacity-60"></div>
-            <div className="absolute top-[30%] right-[20%] w-3 h-3 bg-purple-400 rounded-full animate-float-particle-slow opacity-40" style={{animationDelay: '1s'}}></div>
-            <div className="absolute bottom-[20%] left-[25%] w-2 h-2 bg-pink-400 rounded-full animate-float-particle opacity-50" style={{animationDelay: '2s'}}></div>
-            <div className="absolute top-[60%] right-[30%] w-2 h-2 bg-cyan-300 rounded-full animate-float-particle-slow opacity-60" style={{animationDelay: '0.5s'}}></div>
+        {/* REVOLUTIONARY BACKGROUND */}
+        <div className="absolute inset-0 bg-[#030014]">
+          {/* Animated mesh gradient */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-900/50 via-transparent to-cyan-900/50"></div>
+            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-radial from-cyan-500/20 via-transparent to-transparent animate-pulse-slow"></div>
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-purple-500/20 via-transparent to-transparent animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent animate-pulse-slow" style={{animationDelay: '1s'}}></div>
           </div>
           
-          {/* Gradient orbs */}
-          <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-gradient-to-br from-cyan-500/20 to-transparent rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute bottom-0 right-0 w-[700px] h-[700px] bg-gradient-to-tl from-purple-500/20 to-transparent rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1s'}}></div>
+          {/* Animated grid lines */}
+          <div className="absolute inset-0" style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(6, 182, 212, 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px'
+          }}></div>
           
-          {/* Subtle grid */}
-          <div className="absolute inset-0 opacity-5" 
-            style={{
-              backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-              backgroundSize: '50px 50px'
-            }}
-          ></div>
+          {/* Floating orbs */}
+          <div className="absolute top-20 left-[10%] w-4 h-4 bg-cyan-400 rounded-full blur-sm animate-float-particle shadow-[0_0_20px_rgba(6,182,212,0.8)]"></div>
+          <div className="absolute top-40 right-[15%] w-3 h-3 bg-purple-400 rounded-full blur-sm animate-float-particle-slow shadow-[0_0_15px_rgba(168,85,247,0.8)]" style={{animationDelay: '1s'}}></div>
+          <div className="absolute bottom-32 left-[20%] w-5 h-5 bg-pink-400 rounded-full blur-sm animate-float-particle shadow-[0_0_25px_rgba(244,114,182,0.8)]" style={{animationDelay: '2s'}}></div>
+          <div className="absolute top-[60%] right-[25%] w-2 h-2 bg-cyan-300 rounded-full blur-sm animate-float-particle-slow shadow-[0_0_10px_rgba(103,232,249,0.8)]" style={{animationDelay: '0.5s'}}></div>
+          <div className="absolute bottom-40 right-[10%] w-3 h-3 bg-yellow-400 rounded-full blur-sm animate-float-particle shadow-[0_0_15px_rgba(250,204,21,0.8)]" style={{animationDelay: '1.5s'}}></div>
           
-          {/* Spotlight effect */}
-          <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/40"></div>
+          {/* Neon lines */}
+          <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-cyan-500/20 to-transparent"></div>
+          <div className="absolute top-0 right-1/4 w-px h-full bg-gradient-to-b from-transparent via-purple-500/20 to-transparent"></div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left Content - Premium Layout */}
-            <div className="text-white space-y-6 sm:space-y-8 order-last lg:order-first">
-              {/* Brand Logo */}
-              <div key={`brand-${currentSlide}`} className="animate-fade-in-up">
-                <span className="text-sm font-bold tracking-widest uppercase text-white/60">{currentSlideData?.brand || 'RYM GSM'}</span>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            
+            {/* LEFT CONTENT - REVOLUTIONARY LAYOUT */}
+            <div className="space-y-8 order-last lg:order-first">
+              
+              {/* Brand with neon effect */}
+              <div className="animate-fade-in-up">
+                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
+                  <span className="text-sm font-bold tracking-[0.2em] uppercase text-white/70">{currentSlideData?.brand || 'RYM GSM'}</span>
+                </div>
               </div>
 
-              {/* Product Name - Gradient Text */}
-              <div key={`name-${currentSlide}`} className="animate-slide-in-left delay-100">
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.1] bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} bg-clip-text text-transparent drop-shadow-2xl">
-                  {currentSlideData?.title || ''}
+              {/* Product Name - MASSIVE with neon glow */}
+              <div className="animate-slide-in-left delay-100">
+                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.9] tracking-tight">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/80 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+                    {currentSlideData?.title || ''}
+                  </span>
                 </h1>
               </div>
 
-              {/* Tagline */}
-              <div key={`tagline-${currentSlide}`} className="animate-fade-in-up delay-200">
-                <p className="text-lg sm:text-xl text-white/80 font-medium max-w-xl">
+              {/* Tagline with typewriter effect */}
+              <div className="animate-fade-in-up delay-200">
+                <p className="text-lg sm:text-xl text-white/60 font-medium max-w-lg leading-relaxed">
                   {currentSlideData?.tagline || ''}
                 </p>
               </div>
 
-              {/* Key Specs - Icon Format */}
-              <div key={`specs-${currentSlide}`} className="grid grid-cols-2 gap-4 animate-fade-in-up delay-300 max-w-lg">
+              {/* SPECS - Futuristic cards */}
+              <div className="grid grid-cols-2 gap-3 animate-fade-in-up delay-300">
                 {currentSlideData?.specs?.map((spec, i) => {
                   const icons = {
-                    wifi: <Wifi className="h-6 w-6" />,
-                    battery: <Battery className="h-6 w-6" />,
-                    camera: <Camera className="h-6 w-6" />,
-                    cpu: <Cpu className="h-6 w-6" />
+                    wifi: <Wifi className="h-5 w-5" />,
+                    battery: <Battery className="h-5 w-5" />,
+                    camera: <Camera className="h-5 w-5" />,
+                    cpu: <Cpu className="h-5 w-5" />
                   };
+                  const colors = ['cyan', 'purple', 'pink', 'yellow'];
+                  const color = colors[i % colors.length];
                   return (
                     <div 
-                      key={`${currentSlide}-spec-${i}`} 
-                      className="group flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105"
-                      style={{animationDelay: `${300 + i * 100}ms`}}
+                      key={`spec-${currentSlide}-${i}`}
+                      className="group relative overflow-hidden rounded-2xl bg-white/[0.03] border border-white/10 p-4 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-500 hover:scale-[1.02]"
                     >
-                      <div className="p-2.5 bg-gradient-to-br ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} rounded-xl group-hover:scale-110 transition-transform shadow-lg">
-                        {icons[spec.icon]}
+                      <div className={`absolute inset-0 bg-gradient-to-br from-${color}-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                      <div className="relative flex items-center gap-3">
+                        <div className={`p-2.5 rounded-xl bg-gradient-to-br from-${color}-500/20 to-${color}-500/5 text-${color}-400 shadow-[0_0_20px_rgba(6,182,212,0.3)]`}>
+                          {icons[spec.icon]}
+                        </div>
+                        <span className="text-sm font-semibold text-white/80">{spec.text}</span>
                       </div>
-                      <span className="text-sm font-semibold text-white/90">{spec.text}</span>
                     </div>
                   );
                 }) || []}
               </div>
 
-              {/* Price with Badge */}
-              <div key={`price-${currentSlide}`} className="flex items-center gap-4 animate-fade-in-up delay-500">
-                <div className="relative">
-                  {/* Glow effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} blur-2xl opacity-50 rounded-3xl"></div>
-                  {/* Price container */}
-                  <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 px-8 py-4 rounded-3xl shadow-2xl">
+              {/* PRICE - Holographic effect */}
+              <div className="animate-fade-in-up delay-500">
+                <div className="inline-block relative">
+                  {/* Glow */}
+                  <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-pink-500/30 blur-2xl opacity-60 animate-pulse-slow"></div>
+                  {/* Price card */}
+                  <div className="relative px-8 py-5 rounded-3xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 backdrop-blur-xl">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-5xl sm:text-6xl font-black bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} bg-clip-text text-transparent">
+                      <span className="text-6xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
                         {currentSlideData?.price || '0'}
                       </span>
-                      <span className="text-2xl font-bold text-white/80">DT</span>
+                      <span className="text-2xl font-bold text-white/60">DT</span>
                     </div>
-                    <p className="text-xs text-white/50 mt-1 uppercase tracking-wide">Prix TTC</p>
+                    <p className="text-xs text-white/40 mt-1 tracking-widest uppercase">Prix TTC • Garantie Incluse</p>
                   </div>
                 </div>
-                {/* Discount badge if available */}
-                {currentSlideData?.discount && (
-                  <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-2xl font-black text-sm animate-wiggle shadow-xl">
-                    -{currentSlideData.discount}%
-                  </div>
-                )}
               </div>
 
-              {/* CTA Buttons - Premium Style */}
+              {/* CTA BUTTONS - Neon style */}
               <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up delay-700">
                 <Link
                   to={currentSlideData?.id ? `/products/${currentSlideData.id}` : '/products'}
-                  className="group relative px-10 py-5 rounded-2xl font-black text-lg overflow-hidden shadow-2xl hover:shadow-[0_0_40px_rgba(0,212,255,0.6)] transition-all duration-300 hover:scale-105 active:scale-95"
+                  className="group relative px-10 py-5 rounded-2xl font-black text-lg overflow-hidden"
                 >
-                  {/* Gradient background */}
-                  <div className="absolute inset-0 bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent}"></div>
-                  {/* Shine effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                  {/* Animated gradient border */}
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 p-[2px]">
+                    <div className="absolute inset-[2px] rounded-[14px] bg-[#030014]"></div>
+                  </div>
+                  {/* Glow */}
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/50 via-purple-500/50 to-pink-500/50 blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-500"></div>
                   {/* Content */}
-                  <span className="relative z-10 flex items-center justify-center gap-2 text-white">
+                  <span className="relative z-10 flex items-center justify-center gap-3 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 group-hover:from-white group-hover:via-white group-hover:to-white transition-all duration-300">
                     Acheter Maintenant
-                    <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform" />
+                    <ArrowRight className="h-5 w-5 text-purple-400 group-hover:text-white group-hover:translate-x-2 transition-all" />
                   </span>
                 </Link>
                 <Link 
                   to={currentSlideData?.id ? `/products/${currentSlideData.id}` : '/products'}
-                  className="group px-10 py-5 rounded-2xl font-bold text-lg bg-white/5 backdrop-blur-md border-2 border-white/20 hover:bg-white/10 hover:border-white/30 transition-all duration-300 flex items-center justify-center gap-2 text-white shadow-xl active:scale-95"
+                  className="group px-10 py-5 rounded-2xl font-bold text-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center gap-3 text-white/70 hover:text-white backdrop-blur-sm"
                 >
                   <Eye className="h-5 w-5" />
-                  En Savoir Plus
+                  Détails
                 </Link>
               </div>
             </div>
 
-            {/* Right Content - Cinematic Product Display */}
-            <div className="relative flex justify-center items-center h-[400px] sm:h-[500px] lg:h-[600px] order-first lg:order-last">
-              {/* Rotating rings with gradient */}
-              <div className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] lg:w-[550px] lg:h-[550px] rounded-full border-[3px] border-transparent bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} opacity-20 animate-spin-slow" style={{maskImage: 'linear-gradient(transparent 40%, black 60%)'}}></div>
-              <div className="absolute w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] lg:w-[500px] lg:h-[500px] rounded-full border-[2px] border-white/10 animate-spin-slow-reverse"></div>
+            {/* RIGHT CONTENT - 3D PRODUCT SHOWCASE */}
+            <div className="relative flex justify-center items-center h-[450px] sm:h-[550px] lg:h-[650px] order-first lg:order-last">
               
-              {/* Glow orb behind product */}
-              <div className="absolute w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] bg-gradient-to-br ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} opacity-30 blur-[80px] rounded-full animate-pulse-slow"></div>
+              {/* Outer rotating ring */}
+              <div className="absolute w-[400px] h-[400px] sm:w-[500px] sm:h-[500px] lg:w-[600px] lg:h-[600px]">
+                <div className="absolute inset-0 rounded-full border border-cyan-500/20 animate-spin-slow"></div>
+                <div className="absolute inset-4 rounded-full border border-purple-500/20 animate-spin-slow-reverse"></div>
+                <div className="absolute inset-8 rounded-full border border-pink-500/10 animate-spin-slow" style={{animationDuration: '40s'}}></div>
+              </div>
               
-              {/* Product Image with levitation effect */}
-              <div key={`product-${currentSlide}`} className="relative z-10 animate-levitate">
-                <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] flex items-center justify-center">
+              {/* Glowing orb */}
+              <div className="absolute w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-[100px] animate-pulse-slow"></div>
+              
+              {/* Product container */}
+              <div className="relative z-10 animate-levitate">
+                {/* Product image */}
+                <div className="relative">
                   <img 
+                    key={`img-${currentSlide}`}
                     src={currentSlideData?.image || ''}
                     alt={currentSlideData?.title || 'Product'}
                     loading="eager"
-                    decoding="async"
-                    className="w-auto h-full object-contain max-w-[250px] sm:max-w-[350px] lg:max-w-[450px] animate-zoom-in"
-                    style={{ 
-                      filter: 'drop-shadow(0 40px 80px rgba(0,0,0,0.6))'
-                    }}
+                    className="w-auto h-[350px] sm:h-[450px] lg:h-[550px] object-contain drop-shadow-[0_0_100px_rgba(6,182,212,0.3)] animate-zoom-in"
                   />
-                  {/* Spotlight effect */}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-white/20 via-transparent to-transparent blur-2xl scale-110"></div>
+                  
+                  {/* Reflection */}
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[200px] h-[100px] bg-gradient-to-t from-cyan-500/10 to-transparent blur-2xl"></div>
                 </div>
                 
-                {/* Premium badges */}
-                <div className="absolute -top-6 -right-6 bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-[0_0_30px_rgba(251,191,36,0.6)] animate-pulse-badge border-2 border-white/30">
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 animate-spin-slow" />
-                    NEW
-                  </span>
+                {/* Floating badges */}
+                <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 blur-xl opacity-60 animate-pulse"></div>
+                    <div className="relative px-5 py-2.5 rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-black text-sm flex items-center gap-2 shadow-2xl">
+                      <Sparkles className="h-5 w-5 animate-spin-slow" />
+                      NEW
+                    </div>
+                  </div>
                 </div>
-                <div className="absolute -bottom-6 -left-6 bg-gradient-to-br from-green-400 to-emerald-500 text-white px-5 py-2.5 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-[0_0_30px_rgba(34,197,94,0.6)] border-2 border-white/30">
-                  <CheckCircle className="h-5 w-5" />
-                  En Stock
+                
+                <div className="absolute -bottom-4 -left-4 sm:-bottom-6 sm:-left-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 blur-xl opacity-60 animate-pulse"></div>
+                    <div className="relative px-5 py-2.5 rounded-2xl bg-gradient-to-r from-green-400 to-emerald-500 text-black font-bold text-sm flex items-center gap-2 shadow-2xl">
+                      <CheckCircle className="h-5 w-5" />
+                      En Stock
+                    </div>
+                  </div>
                 </div>
-                <div className="absolute top-1/2 -translate-y-1/2 -right-10 bg-gradient-to-r ${currentSlideData?.gradient?.accent || premiumGradients[0].accent} text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-2xl border border-white/30 backdrop-blur-xl animate-pulse-slow">
-                  <span className="flex items-center gap-1.5">
-                    <Zap className="h-4 w-4" />
+                
+                <div className="absolute top-1/2 -translate-y-1/2 -right-8 sm:-right-12">
+                  <div className="px-4 py-2.5 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 text-white font-bold text-xs flex items-center gap-2 shadow-2xl animate-pulse-slow">
+                    <Zap className="h-4 w-4 text-yellow-400" />
                     24h
-                  </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Premium Navigation Controls */}
-          <div className="absolute bottom-8 sm:bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-6">
-            {/* Previous button */}
-            <button 
-              onClick={prevSlide}
-              aria-label="Previous slide"
-              className="group relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20 hover:scale-110 transition-all duration-300 active:scale-95 shadow-2xl overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <ChevronLeft className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-white group-hover:scale-110 transition-transform" />
-            </button>
-            
-            {/* Line indicators */}
-            <div className="flex gap-2 bg-white/5 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10 shadow-2xl">
-              {heroSlides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  aria-label={`Go to slide ${index + 1}`}
-                  className="relative group"
-                >
-                  <div className={`h-1 rounded-full transition-all duration-500 ${
-                    index === currentSlide 
-                      ? 'w-12 bg-gradient-to-r from-cyan-400 to-purple-400 shadow-[0_0_10px_rgba(0,212,255,0.8)]' 
-                      : 'w-8 bg-white/30 hover:bg-white/50 group-hover:w-10'
-                  }`}></div>
-                </button>
-              ))}
+          {/* NAVIGATION - Futuristic */}
+          <div className="absolute bottom-8 sm:bottom-12 left-1/2 transform -translate-x-1/2">
+            <div className="flex items-center gap-6">
+              {/* Prev */}
+              <button 
+                onClick={prevSlide}
+                className="group w-14 h-14 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl flex items-center justify-center hover:bg-white/10 hover:border-white/20 hover:scale-110 transition-all duration-300 shadow-2xl"
+              >
+                <ChevronLeft className="h-6 w-6 text-white/70 group-hover:text-white transition-colors" />
+              </button>
+              
+              {/* Dots */}
+              <div className="flex gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl">
+                {heroSlides.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${
+                      index === currentSlide 
+                        ? 'w-10 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 shadow-[0_0_15px_rgba(6,182,212,0.8)]' 
+                        : 'w-6 bg-white/20 hover:bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
+              
+              {/* Next */}
+              <button 
+                onClick={nextSlide}
+                className="group w-14 h-14 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl flex items-center justify-center hover:bg-white/10 hover:border-white/20 hover:scale-110 transition-all duration-300 shadow-2xl"
+              >
+                <ChevronRight className="h-6 w-6 text-white/70 group-hover:text-white transition-colors" />
+              </button>
             </div>
-            
-            {/* Next button */}
-            <button 
-              onClick={nextSlide}
-              aria-label="Next slide"
-              className="group relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20 hover:scale-110 transition-all duration-300 active:scale-95 shadow-2xl overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <ChevronRight className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-white group-hover:scale-110 transition-transform" />
-            </button>
           </div>
         </div>
       </section>
