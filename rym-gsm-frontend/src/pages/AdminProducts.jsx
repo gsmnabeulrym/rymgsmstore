@@ -127,6 +127,13 @@ const AdminProducts = () => {
     setEditUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Remove URL image (for edit form)
+  const removeEditUrlImage = (index) => {
+    const urls = editImageUrls.split(',').map(url => url.trim()).filter(url => url);
+    urls.splice(index, 1);
+    setEditImageUrls(urls.join(', '));
+  };
+
   // Reset form states
   const resetFormStates = () => {
     setUploadedImages([]);
@@ -904,6 +911,13 @@ const AdminProducts = () => {
                                       e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiA5VjEzTTEyIDE3SDE2TTE2IDlIMTJNMTIgOUw4IDEzTDEyIDE3IiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=';
                                     }}
                                   />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeEditUrlImage(index)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                                  >
+                                    ×
+                                  </button>
                                 </div>
                               ) : null;
                             })}
