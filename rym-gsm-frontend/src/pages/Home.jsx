@@ -35,12 +35,23 @@ const Home = () => {
     select: (data) => data.products
   });
 
-  // Fetch slider products (mix of phones and accessories, no laptops, diverse brands)
+  // Fetch slider products (mix of phones and accessories, no laptops, diverse brands, PNG images preferred)
   const { data: sliderProducts } = useQuery({
     queryKey: ['slider-products'],
-    queryFn: () => api.get('/products?limit=50').then(res => res.data),
+    queryFn: () => api.get('/products?limit=100').then(res => res.data),
     select: (data) => {
       const products = data.products || [];
+      
+      // Helper to check if product has PNG image (transparent background)
+      const hasPngImage = (p) => {
+        if (!p.images) return false;
+        const images = Array.isArray(p.images) ? p.images : 
+          (typeof p.images === 'string' ? JSON.parse(p.images || '[]') : []);
+        if (images.length === 0) return false;
+        const firstImage = images[0] || '';
+        return firstImage.includes('image/png') || firstImage.toLowerCase().endsWith('.png');
+      };
+      
       // Exclude laptops
       const noLaptops = products.filter(p => {
         const name = (p.name || '').toLowerCase();
@@ -48,9 +59,12 @@ const Home = () => {
         return !name.includes('laptop') && !name.includes('ordinateur') && !cat.includes('laptop');
       });
       
-      // Get unique brands and pick one product per brand for diversity
+      // Filter products with PNG images first (transparent backgrounds)
+      const pngProducts = noLaptops.filter(hasPngImage);
+      
+      // Get unique brands from PNG products
       const brandMap = new Map();
-      noLaptops.forEach(p => {
+      pngProducts.forEach(p => {
         const brand = (p.brand || 'Other').toLowerCase();
         if (!brandMap.has(brand)) {
           brandMap.set(brand, p);
@@ -60,7 +74,18 @@ const Home = () => {
       // Convert to array and take up to 5 products from different brands
       const diverseProducts = Array.from(brandMap.values()).slice(0, 5);
       
-      // If we don't have 5, fill with remaining products
+      // If we don't have 5 PNG products, fill with remaining PNG products
+      if (diverseProducts.length < 5) {
+        const usedIds = new Set(diverseProducts.map(p => p.id));
+        for (const p of pngProducts) {
+          if (!usedIds.has(p.id) && diverseProducts.length < 5) {
+            diverseProducts.push(p);
+            usedIds.add(p.id);
+          }
+        }
+      }
+      
+      // If still not enough, fall back to non-PNG products
       if (diverseProducts.length < 5) {
         const usedIds = new Set(diverseProducts.map(p => p.id));
         for (const p of noLaptops) {
@@ -391,17 +416,18 @@ const Home = () => {
               {/* Phone Image */}
               <div className="relative z-10 animate-phone-float">
                 <div className="relative h-[280px] sm:h-[300px] md:h-[400px] flex items-center justify-center">
-                  <div className="relative bg-white rounded-3xl p-4 shadow-2xl">
-                    <img 
-                      src={currentSlideData.image}
-                      alt={currentSlideData.title}
-                      loading="eager"
-                      decoding="async"
-                      className="w-auto h-[240px] sm:h-[260px] md:h-[350px] object-contain"
-                    />
-                  </div>
+                  <img 
+                    src={currentSlideData.image}
+                    alt={currentSlideData.title}
+                    loading="eager"
+                    decoding="async"
+                    className="w-auto h-full object-contain max-w-[220px] sm:max-w-[280px] md:max-w-[350px]"
+                    style={{ 
+                      filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))'
+                    }}
+                  />
                   {/* White glow behind phone */}
-                  <div className="absolute inset-0 -z-10 bg-white/30 blur-3xl rounded-full scale-90"></div>
+                  <div className="absolute inset-0 -z-10 bg-white/20 blur-3xl rounded-full scale-75"></div>
                 </div>
                 
                 {/* Floating badges */}
